@@ -4,9 +4,20 @@ export const translations = {
     tagline: "Lipa kwa uso. Salama, haraka, rahisi.",
     demoBanner: "HALI YA MAJARIBIO (SANDBOX) — Hakuna pesa halisi inayokatwa. Inatumia mazingira salama ya TIPS/BOT.",
     nav: {
+      landing: "Nyumbani (3D)",
       customer: "Mtumiaji (Customer)",
       merchant: "Duka / POS (Merchant)",
       architecture: "Usanifu wa Mfumo (Architecture)",
+      login: "Ingia",
+      register: "Jisajili",
+      logout: "Ondoka",
+    },
+    authPrompt: {
+      title: "Tafadhali Ingia au Jisajili",
+      desc: "Ili kuona na kutumia akaunti ya mtumiaji, kituo cha POS cha duka, usanifu au malipo ya nje ya mtandao, unahitaji kuingia au kujisajili kwenye FacePay TZ kwanza.",
+      loginAction: "Ingia kwenye Akaunti",
+      registerAction: "Jisajili Bure Sasa",
+      guestNotice: "Hujaingia kwenye mfumo (Mgeni)"
     },
     wallet: {
       balanceTitle: "Salio la Mkoba",
@@ -105,9 +116,20 @@ export const translations = {
     tagline: "Pay with your face. Safe, fast, simple.",
     demoBanner: "SANDBOX MODE — No real money is debited. Simulated on Tanzania TIPS / BOT settlement testbed.",
     nav: {
+      landing: "3D Home",
       customer: "Customer App",
       merchant: "Merchant POS Terminal",
       architecture: "System Architecture",
+      login: "Log In",
+      register: "Register",
+      logout: "Log Out",
+    },
+    authPrompt: {
+      title: "Please Log In or Register",
+      desc: "To view and use Customer App, Merchant POS, System Architecture, or Offline QR, you must log in or register first on FacePay TZ.",
+      loginAction: "Log In to Account",
+      registerAction: "Register Free Now",
+      guestNotice: "You are currently browsing as a Guest"
     },
     wallet: {
       balanceTitle: "Wallet Balance",

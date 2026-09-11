@@ -1,6 +1,6 @@
 export type Language = 'sw' | 'en';
 
-export type UserRole = 'CUSTOMER' | 'MERCHANT' | 'ARCHITECT';
+export type UserRole = 'LANDING' | 'CUSTOMER' | 'MERCHANT' | 'ARCHITECT';
 
 export type PaymentRail = 
   | 'M_PESA' 

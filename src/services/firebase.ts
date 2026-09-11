@@ -11,9 +11,11 @@ import {
   orderBy, 
   limit, 
   onSnapshot,
-  Timestamp 
+  Timestamp,
+  Unsubscribe
 } from 'firebase/firestore';
-import { getDatabase, ref, set as setRtdb, get as getRtdb, push as pushRtdb } from 'firebase/database';
+import { getDatabase, ref, set as setRtdb, get as getRtdb, push as pushRtdb, onValue } from 'firebase/database';
+import { getAuth, signInAnonymously, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { UserProfile, Wallet, Transaction, Merchant } from '../types';
 
 export const firebaseConfig = {
@@ -30,9 +32,21 @@ export const firebaseConfig = {
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const firestore = getFirestore(app);
 export const rtdb = getDatabase(app);
+export const auth = getAuth(app);
 
 // Cloud Firestore & RTDB Sync helpers for FACEPAY TZ
 export const firebaseService = {
+  async ensureAuth(): Promise<FirebaseUser | null> {
+    try {
+      if (auth.currentUser) return auth.currentUser;
+      const cred = await signInAnonymously(auth);
+      return cred.user;
+    } catch (err) {
+      console.warn('[Firebase Auth] Anonymous sign-in notice:', err);
+      return null;
+    }
+  },
+
   async saveUser(user: UserProfile, wallet: Wallet, pin: string = '1234') {
     try {
       // 1. Save to Firestore
@@ -109,6 +123,21 @@ export const firebaseService = {
     } catch (err) {
       console.warn('[Firebase] Update balance warning:', err);
       return false;
+    }
+  },
+
+  subscribeToWallet(walletId: string, onUpdate: (balance: number) => void): () => void {
+    try {
+      const walletRtdbRef = ref(rtdb, `wallets/${walletId}/balance`);
+      const unsubRtdb = onValue(walletRtdbRef, (snapshot) => {
+        const val = snapshot.val();
+        if (typeof val === 'number') {
+          onUpdate(val);
+        }
+      });
+      return unsubRtdb;
+    } catch {
+      return () => {};
     }
   },
 

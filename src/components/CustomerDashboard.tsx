@@ -16,7 +16,9 @@ import {
   ChevronRight,
   Fingerprint,
   QrCode,
-  UserCheck
+  UserCheck,
+  WifiOff,
+  Users
 } from 'lucide-react';
 import { Language, Merchant, Transaction, UserProfile, Wallet } from '../types';
 import { translations } from '../utils/translations';
@@ -32,6 +34,8 @@ interface CustomerDashboardProps {
   onOpenTopUp: () => void;
   onOpenEnrollment: () => void;
   onOpenQR: () => void;
+  onOpenOfflineQR?: () => void;
+  onOpenAccountSwitcher?: () => void;
   onOpenAuth: () => void;
   onSelectTransaction: (tx: Transaction) => void;
 }
@@ -46,6 +50,8 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   onOpenTopUp,
   onOpenEnrollment,
   onOpenQR,
+  onOpenOfflineQR,
+  onOpenAccountSwitcher,
   onOpenAuth,
   onSelectTransaction
 }) => {
@@ -199,6 +205,17 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
               <QrCode className="w-4 h-4 text-teal-400" />
               <span>{language === 'sw' ? 'Lipa kwa QR' : 'Pay QR'}</span>
             </button>
+
+            {onOpenOfflineQR && (
+              <button
+                id="wallet-offline-qr-action-btn"
+                onClick={onOpenOfflineQR}
+                className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 font-semibold text-sm border border-emerald-700/60 active:scale-[0.98] transition-all"
+              >
+                <WifiOff className="w-4 h-4 text-emerald-400" />
+                <span>{language === 'sw' ? 'Offline QR' : 'Offline QR'}</span>
+              </button>
+            )}
 
             <button
               id="wallet-top-up-action-btn"

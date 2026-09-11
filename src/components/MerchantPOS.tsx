@@ -16,13 +16,17 @@ import {
   Download,
   Calendar,
   Share2,
-  ChevronDown
+  ChevronDown,
+  Radio,
+  WifiOff
 } from 'lucide-react';
 import { Language, Merchant, Transaction, UserProfile, Wallet } from '../types';
 import { translations } from '../utils/translations';
 import { formatTZS, maskPhoneNumber, formatDate } from '../utils/formatters';
 import { apiClient } from '../services/apiClient';
 import { MERCHANTS } from '../data/mockData';
+import { soundbox } from '../utils/soundboxAudio';
+import { SoundboxSpeaker } from './SoundboxSpeaker';
 
 interface MerchantPOSProps {
   merchant: Merchant;
@@ -39,7 +43,7 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
 }) => {
   const t = translations[language];
   const [activeMerchant, setActiveMerchant] = useState<Merchant>(initialMerchant);
-  const [activeView, setActiveView] = useState<'POS' | 'QR' | 'LEDGER'>('POS');
+  const [activeView, setActiveView] = useState<'POS' | 'SOUNDBOX' | 'QR' | 'LEDGER'>('POS');
 
   // POS State
   const [billAmount, setBillAmount] = useState<string>('15000');
@@ -169,6 +173,14 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
       setPosState('PAID');
       setMerchantSales(prev => [result.transaction, ...prev]);
       onPaymentCompleted(result.transaction, result.updatedWallet);
+
+      // Trigger Merchant Soundbox Voice Announcement!
+      soundbox.announcePayment({
+        amount: Number(billAmount),
+        payerName: user.fullName,
+        rail: activeMerchant.settlementRail,
+        language: language
+      });
     } catch (err: any) {
       setErrorMessage(err.message || 'Payment processing error');
       setPosState('ENTER_AMOUNT');
@@ -237,6 +249,19 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
           >
             <ScanFace className="w-4 h-4" />
             <span>{language === 'sw' ? 'Kituo cha Mauzo (POS)' : 'POS Terminal'}</span>
+          </button>
+
+          <button
+            id="tab-pos-soundbox"
+            onClick={() => setActiveView('SOUNDBOX')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              activeView === 'SOUNDBOX'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <Radio className="w-4 h-4" />
+            <span>{language === 'sw' ? 'Soundbox ya Sauti' : 'Soundbox Voice'}</span>
           </button>
 
           <button
@@ -473,7 +498,54 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
         </>
       )}
 
-      {/* VIEW 2: MERCHANT LIPA NAMBA QR CODE STAND */}
+      {/* VIEW 2: SOUNDBOX VIEW */}
+      {activeView === 'SOUNDBOX' && (
+        <div className="space-y-6">
+          <SoundboxSpeaker
+            language={language}
+            lastAmount={lastTx ? lastTx.amount : Number(billAmount) || 15000}
+            lastPayer={lastTx ? lastTx.userName : user.fullName}
+            lastRail={lastTx ? lastTx.paymentRail : activeMerchant.settlementRail}
+          />
+
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span>{language === 'sw' ? 'Jinsi FacePay Soundbox Inavyofanya Kazi' : 'How FacePay Soundbox Works'}</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="font-bold text-emerald-400 block font-mono">1. Hakuna Ulaghai wa SMS</span>
+                <p className="text-[11px] text-slate-400">
+                  {language === 'sw'
+                    ? 'Spika inatamka kiasi papo hapo kwa sauti ya Kiswahili, hivyo mfanyabiashara hawezi kudanganywa na screenshot feki ya SMS.'
+                    : 'Instant spoken broadcast in Swahili eliminates reliance on fraudulent SMS screenshots.'}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="font-bold text-emerald-400 block font-mono">2. MNOs & TIPS Switch</span>
+                <p className="text-[11px] text-slate-400">
+                  {language === 'sw'
+                    ? 'Inapokea taarifa kutoka Vodacom M-Pesa, Tigo Pesa, Airtel Money na Benki za CRDB na NMB kwa sekunde 0.8.'
+                    : 'Accepts notifications from all Tanzanian networks and banks via TIPS in under 0.8s.'}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <span className="font-bold text-emerald-400 block font-mono">3. Ulinzi wa Biometria</span>
+                <p className="text-[11px] text-slate-400">
+                  {language === 'sw'
+                    ? 'Mteja anapoidhinisha kwa uso, taarifa inathibitishwa na switch ya BOT na kutangazwa papo hapo.'
+                    : 'When customer face biometric clears, TIPS switch broadcasts audio immediately.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 3: MERCHANT LIPA NAMBA QR CODE STAND */}
       {activeView === 'QR' && (
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl text-center">
           <div className="space-y-1">

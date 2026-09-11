@@ -21,9 +21,11 @@ import { formatTZS, maskPhoneNumber } from '../utils/formatters';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: UserProfile;
-  currentWallet: Wallet;
+  currentUser?: UserProfile;
+  currentWallet?: Wallet;
   language: Language;
+  initialTab?: 'LOGIN' | 'REGISTER' | 'SWITCH';
+  isAuthenticated?: boolean;
   onAuthSuccess: (user: UserProfile, wallet: Wallet) => void;
 }
 
@@ -33,12 +35,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   currentUser,
   currentWallet,
   language,
+  initialTab = 'LOGIN',
+  isAuthenticated = false,
   onAuthSuccess
 }) => {
-  const [tab, setTab] = useState<'LOGIN' | 'REGISTER' | 'SWITCH'>('LOGIN');
+  // If not authenticated, force tab to LOGIN or REGISTER
+  const [tab, setTab] = useState<'LOGIN' | 'REGISTER' | 'SWITCH'>(
+    !isAuthenticated && initialTab === 'SWITCH' ? 'LOGIN' : initialTab
+  );
   
   // Login fields
-  const [loginPhone, setLoginPhone] = useState(currentUser.phoneNumber);
+  const [loginPhone, setLoginPhone] = useState(isAuthenticated && currentUser?.phoneNumber ? currentUser.phoneNumber : '');
   const [loginPin, setLoginPin] = useState('');
   
   // Register fields
@@ -57,11 +64,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      if (!isAuthenticated) {
+        setTab(initialTab === 'REGISTER' ? 'REGISTER' : 'LOGIN');
+        setLoginPhone('');
+        setLoginPin('');
+      } else {
+        setTab(initialTab);
+        if (currentUser?.phoneNumber) {
+          setLoginPhone(currentUser.phoneNumber);
+        }
+      }
       loadDemoAccounts();
       setErrorMsg(null);
       setSuccessMsg(null);
     }
-  }, [isOpen]);
+  }, [isOpen, initialTab, currentUser, isAuthenticated]);
 
   const loadDemoAccounts = async () => {
     try {
@@ -194,18 +211,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {language === 'sw' ? 'Jisajili Mpya' : 'Register New'}
           </button>
 
-          <button
-            id="tab-switch-btn"
-            type="button"
-            onClick={() => { setTab('SWITCH'); setErrorMsg(null); }}
-            className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all ${
-              tab === 'SWITCH'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            {language === 'sw' ? 'Badili Mtumiaji' : 'Switch Demo'}
-          </button>
+          {/* Badili Mtumiaji itaonekana TU ikiwa mtumiaji amekwisha ingia (isAuthenticated) */}
+          {isAuthenticated && (
+            <button
+              id="tab-switch-btn"
+              type="button"
+              onClick={() => { setTab('SWITCH'); setErrorMsg(null); }}
+              className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all ${
+                tab === 'SWITCH'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+              }`}
+            >
+              {language === 'sw' ? 'Badili Mtumiaji' : 'Switch Demo'}
+            </button>
+          )}
         </div>
 
         {/* Body content */}
@@ -283,6 +303,47 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <UserCheck className="w-4 h-4" />}
                 <span>{language === 'sw' ? 'Ingia Kwenye Akaunti' : 'Sign In to Account'}</span>
               </button>
+
+              {/* Demo quick-fill options for testing */}
+              {demoAccounts.length > 0 && (
+                <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-slate-400">
+                      {language === 'sw' ? 'Akaunti za Kujaribia (Bofya kuweka namba):' : 'Demo Accounts (Click to fill phone):'}
+                    </span>
+                    <span className="text-emerald-400 font-mono text-[10px]">PIN: 1234</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {demoAccounts.slice(0, 4).map((acc) => (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => {
+                          setLoginPhone(acc.phoneNumber);
+                          setLoginPin('1234');
+                        }}
+                        className="flex items-center gap-2 p-2 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 text-left transition-colors group"
+                      >
+                        <img
+                          src={acc.faceAvatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80'}
+                          alt={acc.fullName}
+                          className="w-6 h-6 rounded-full object-cover border border-slate-700 group-hover:border-emerald-400 shrink-0"
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="overflow-hidden">
+                          <p className="text-xs font-bold text-slate-200 truncate group-hover:text-emerald-300">
+                            {acc.fullName.split(' ')[0]}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono">
+                            {acc.linkedRail}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </form>
           )}
 
@@ -396,8 +457,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </form>
           )}
 
-          {/* TAB 3: SWITCH DEMO ACCOUNTS */}
-          {tab === 'SWITCH' && (
+          {/* TAB 3: SWITCH DEMO ACCOUNTS (Inaonekana TU wakati mtumiaji ameingia) */}
+          {isAuthenticated && tab === 'SWITCH' && (
             <div className="space-y-3">
               <p className="text-xs text-slate-400">
                 {language === 'sw' 
@@ -407,7 +468,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                 {demoAccounts.map((acc) => {
-                  const isCurrent = acc.id === currentUser.id;
+                  const isCurrent = Boolean(isAuthenticated && currentUser?.id && acc?.id === currentUser.id);
                   return (
                     <button
                       key={acc.id}

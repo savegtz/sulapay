@@ -173,8 +173,12 @@ export const apiClient = {
       throw new Error(data.message || 'Payment authorization failed');
     }
     // Sync transaction and wallet update to Firebase
-    firebaseService.recordTransaction(data.transaction).catch(() => {});
-    firebaseService.updateWalletBalance(data.updatedWallet.id, data.updatedWallet.balance).catch(() => {});
+    if (data.transaction) {
+      firebaseService.recordTransaction(data.transaction).catch(() => {});
+    }
+    if (data.updatedWallet?.id) {
+      firebaseService.updateWalletBalance(data.updatedWallet.id, data.updatedWallet.balance).catch(() => {});
+    }
     return data;
   },
 
@@ -193,8 +197,12 @@ export const apiClient = {
       throw new Error(data.message || 'Top-up failed');
     }
     // Sync to Firebase
-    firebaseService.recordTransaction(data.transaction).catch(() => {});
-    firebaseService.updateWalletBalance(data.updatedWallet.id, data.updatedWallet.balance).catch(() => {});
+    if (data.transaction) {
+      firebaseService.recordTransaction(data.transaction).catch(() => {});
+    }
+    if (data.updatedWallet?.id) {
+      firebaseService.updateWalletBalance(data.updatedWallet.id, data.updatedWallet.balance).catch(() => {});
+    }
     return data;
   },
 

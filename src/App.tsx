@@ -9,6 +9,9 @@ import { ArchitectureInspector } from './components/ArchitectureInspector';
 import { TopUpModal } from './components/TopUpModal';
 import { AuthModal } from './components/AuthModal';
 import { QRPaymentModal } from './components/QRPaymentModal';
+import { OfflineQRPaymentModal } from './components/OfflineQRPaymentModal';
+import { AccountSwitcherModal } from './components/AccountSwitcherModal';
+import { ModernLandingPage } from './components/ModernLandingPage';
 import { 
   Language, 
   Merchant, 
@@ -24,12 +27,17 @@ import {
   INITIAL_TRANSACTIONS 
 } from './data/mockData';
 import { apiClient } from './services/apiClient';
+import { firebaseService } from './services/firebase';
 import { Shield, Sparkles } from 'lucide-react';
 
 export default function App() {
-  const [currentRole, setCurrentRole] = useState<UserRole>('CUSTOMER');
+  const [currentRole, setCurrentRole] = useState<UserRole>('LANDING');
   const [language, setLanguage] = useState<Language>('sw');
   
+  // Authentication State (Gated: Guests cannot view internal portals until logged in or registered)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authInitialTab, setAuthInitialTab] = useState<'LOGIN' | 'REGISTER' | 'SWITCH'>('LOGIN');
+
   // Data State
   const [user, setUser] = useState<UserProfile>(INITIAL_USER);
   const [wallet, setWallet] = useState<Wallet>(INITIAL_WALLET);
@@ -44,6 +52,8 @@ export default function App() {
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [isOfflineQROpen, setIsOfflineQROpen] = useState(false);
+  const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
   const [receiptTx, setReceiptTx] = useState<Transaction | null>(null);
 
   // Initialize data from server
@@ -51,8 +61,12 @@ export default function App() {
     async function initData() {
       try {
         const profile = await apiClient.getProfile();
-        setUser(profile.user);
-        setWallet(profile.wallet);
+        if (profile?.user) {
+          setUser(profile.user);
+        }
+        if (profile?.wallet) {
+          setWallet(profile.wallet);
+        }
 
         const merchantsData = await apiClient.getMerchants();
         if (merchantsData && merchantsData.length > 0) {
@@ -70,13 +84,44 @@ export default function App() {
       }
     }
     initData();
+    firebaseService.ensureAuth().catch(() => {});
   }, []);
+
+  // Real-time Firebase RTDB balance listener for active wallet
+  useEffect(() => {
+    if (!wallet?.id) return;
+    const unsubscribe = firebaseService.subscribeToWallet(wallet.id, (newBalance) => {
+      setWallet(prev => (prev.balance !== newBalance ? { ...prev, balance: newBalance } : prev));
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [wallet?.id]);
 
   const handleToggleLanguage = () => {
     setLanguage(prev => (prev === 'sw' ? 'en' : 'sw'));
   };
 
+  const handleOpenLogin = () => {
+    setAuthInitialTab('LOGIN');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleOpenRegister = () => {
+    setAuthInitialTab('REGISTER');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentRole('LANDING');
+  };
+
   const handleInitiatePayment = (merchant?: Merchant) => {
+    if (!isAuthenticated) {
+      handleOpenLogin();
+      return;
+    }
     setSelectedMerchant(merchant || null);
     setIsPaymentModalOpen(true);
   };
@@ -98,19 +143,91 @@ export default function App() {
     setIsEnrollmentModalOpen(false);
   };
 
+  const handleOfflinePaymentQueued = (pendingTx: Transaction, updatedWallet: Wallet) => {
+    setTransactions(prev => [pendingTx, ...prev]);
+    setWallet(updatedWallet);
+    setReceiptTx(pendingTx);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
       {/* Header with Role Navigation, Language Toggle, and TIPS Status */}
       <Header
         currentRole={currentRole}
-        onSelectRole={setCurrentRole}
+        onSelectRole={(role) => {
+          if (!isAuthenticated && role !== 'LANDING') {
+            handleOpenLogin();
+            return;
+          }
+          setCurrentRole(role);
+        }}
         language={language}
         onToggleLanguage={handleToggleLanguage}
+        isAuthenticated={isAuthenticated}
+        onOpenLogin={handleOpenLogin}
+        onOpenRegister={handleOpenRegister}
+        onLogout={handleLogout}
+        onOpenAccountSwitcher={() => {
+          if (!isAuthenticated) {
+            handleOpenLogin();
+            return;
+          }
+          setIsAccountSwitcherOpen(true);
+        }}
+        onOpenOfflineQR={() => {
+          if (!isAuthenticated) {
+            handleOpenLogin();
+            return;
+          }
+          setIsOfflineQROpen(true);
+        }}
+        activeUserName={user?.fullName || 'Juma Mkwawa'}
+        activeRail={wallet?.linkedRail || 'M_PESA'}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-12">
-        {currentRole === 'CUSTOMER' && (
+        {/* If user is not authenticated, they can only see the Landing Page */}
+        {(!isAuthenticated || currentRole === 'LANDING') && (
+          <ModernLandingPage
+            language={language}
+            isAuthenticated={isAuthenticated}
+            onNavigateRole={(role) => {
+              if (!isAuthenticated) {
+                handleOpenLogin();
+                return;
+              }
+              setCurrentRole(role);
+            }}
+            onOpenOfflineQR={() => {
+              if (!isAuthenticated) {
+                handleOpenLogin();
+                return;
+              }
+              setIsOfflineQROpen(true);
+            }}
+            onOpenAccountSwitcher={() => {
+              if (!isAuthenticated) {
+                handleOpenLogin();
+                return;
+              }
+              setIsAccountSwitcherOpen(true);
+            }}
+            onOpenFacePay={() => {
+              if (!isAuthenticated) {
+                handleOpenLogin();
+                return;
+              }
+              setCurrentRole('CUSTOMER');
+              setIsPaymentModalOpen(true);
+            }}
+            onOpenLogin={handleOpenLogin}
+            onOpenRegister={handleOpenRegister}
+          />
+        )}
+
+        {/* Authenticated Customer App */}
+        {isAuthenticated && currentRole === 'CUSTOMER' && (
           <CustomerDashboard
             user={user}
             wallet={wallet}
@@ -121,12 +238,15 @@ export default function App() {
             onOpenTopUp={() => setIsTopUpModalOpen(true)}
             onOpenEnrollment={() => setIsEnrollmentModalOpen(true)}
             onOpenQR={() => setIsQRModalOpen(true)}
+            onOpenOfflineQR={() => setIsOfflineQROpen(true)}
+            onOpenAccountSwitcher={() => setIsAccountSwitcherOpen(true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onSelectTransaction={(tx) => setReceiptTx(tx)}
           />
         )}
 
-        {currentRole === 'MERCHANT' && (
+        {/* Authenticated Merchant POS */}
+        {isAuthenticated && currentRole === 'MERCHANT' && (
           <MerchantPOS
             merchant={merchants[0] || MERCHANTS[0]}
             user={user}
@@ -138,7 +258,8 @@ export default function App() {
           />
         )}
 
-        {currentRole === 'ARCHITECT' && (
+        {/* Authenticated Architecture Inspector */}
+        {isAuthenticated && currentRole === 'ARCHITECT' && (
           <ArchitectureInspector language={language} />
         )}
       </main>
@@ -182,18 +303,53 @@ export default function App() {
         }}
       />
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+      {/* Offline QR Payment Modal */}
+      <OfflineQRPaymentModal
+        isOpen={isOfflineQROpen}
+        onClose={() => setIsOfflineQROpen(false)}
+        user={user}
+        wallet={wallet}
+        language={language}
+        onOfflinePaymentQueued={handleOfflinePaymentQueued}
+      />
+
+      {/* Multi-Account Switcher Modal */}
+      <AccountSwitcherModal
+        isOpen={isAccountSwitcherOpen && isAuthenticated}
+        onClose={() => setIsAccountSwitcherOpen(false)}
         currentUser={user}
+        currentUserId={user?.id}
         currentWallet={wallet}
         language={language}
-        onAuthSuccess={(updatedUser, updatedWallet) => {
-          setUser(updatedUser);
-          setWallet(updatedWallet);
+        onSelectAccount={(account) => {
+          setUser(account.user);
+          setWallet(account.wallet);
+          setIsAuthenticated(true);
+        }}
+        onSelectPersona={(persona) => {
+          setUser(persona.user);
+          setWallet(persona.wallet);
+          setIsAuthenticated(true);
         }}
       />
 
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={isAuthenticated ? user : undefined}
+        currentWallet={isAuthenticated ? wallet : undefined}
+        language={language}
+        initialTab={!isAuthenticated && authInitialTab === 'SWITCH' ? 'LOGIN' : authInitialTab}
+        isAuthenticated={isAuthenticated}
+        onAuthSuccess={(updatedUser, updatedWallet) => {
+          setUser(updatedUser);
+          setWallet(updatedWallet);
+          setIsAuthenticated(true);
+          setIsAuthModalOpen(false);
+        }}
+      />
+
+      {/* Official Receipt with PDF Download & Print */}
       <ReceiptModal
         transaction={receiptTx}
         language={language}
