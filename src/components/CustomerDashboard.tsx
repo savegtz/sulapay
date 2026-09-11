@@ -14,7 +14,9 @@ import {
   Sparkles,
   Building2,
   ChevronRight,
-  Fingerprint
+  Fingerprint,
+  QrCode,
+  UserCheck
 } from 'lucide-react';
 import { Language, Merchant, Transaction, UserProfile, Wallet } from '../types';
 import { translations } from '../utils/translations';
@@ -29,6 +31,8 @@ interface CustomerDashboardProps {
   onInitiatePayment: (merchant?: Merchant) => void;
   onOpenTopUp: () => void;
   onOpenEnrollment: () => void;
+  onOpenQR: () => void;
+  onOpenAuth: () => void;
   onSelectTransaction: (tx: Transaction) => void;
 }
 
@@ -41,6 +45,8 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   onInitiatePayment,
   onOpenTopUp,
   onOpenEnrollment,
+  onOpenQR,
+  onOpenAuth,
   onSelectTransaction
 }) => {
   const t = translations[language];
@@ -125,6 +131,15 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           >
             {language === 'sw' ? 'Badili Sura' : 'Update Face'}
           </button>
+
+          <button
+            id="open-auth-modal-btn"
+            onClick={onOpenAuth}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900/80 rounded-xl border border-emerald-700/60 transition-colors"
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>{language === 'sw' ? 'Akaunti' : 'Account'}</span>
+          </button>
         </div>
       </div>
 
@@ -165,23 +180,32 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
             </p>
           </div>
 
-          {/* Wallet Actions: Pay with Face / Top Up */}
+          {/* Wallet Actions: Pay with Face / Lipa kwa QR / Top Up */}
           <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
             <button
               id="wallet-pay-face-action-btn"
               onClick={() => onInitiatePayment()}
-              className="flex-1 min-w-[200px] flex items-center justify-center gap-3 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm sm:text-base shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-all"
+              className="flex-1 min-w-[170px] flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm sm:text-base shadow-xl shadow-emerald-500/20 active:scale-[0.98] transition-all"
             >
               <ScanFace className="w-5 h-5 text-slate-950" />
               <span>{t.actions.payFace}</span>
             </button>
 
             <button
+              id="wallet-pay-qr-action-btn"
+              onClick={onOpenQR}
+              className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-teal-950/90 hover:bg-teal-900 text-teal-200 font-semibold text-sm border border-teal-700/60 active:scale-[0.98] transition-all"
+            >
+              <QrCode className="w-4 h-4 text-teal-400" />
+              <span>{language === 'sw' ? 'Lipa kwa QR' : 'Pay QR'}</span>
+            </button>
+
+            <button
               id="wallet-top-up-action-btn"
               onClick={onOpenTopUp}
-              className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-800 text-slate-100 font-semibold text-sm border border-slate-700/80 active:scale-[0.98] transition-all"
+              className="flex items-center justify-center gap-2 px-4 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-800 text-slate-100 font-semibold text-sm border border-slate-700/80 active:scale-[0.98] transition-all"
             >
-              <PlusCircle className="w-5 h-5 text-emerald-400" />
+              <PlusCircle className="w-4 h-4 text-emerald-400" />
               <span>{t.wallet.topUp}</span>
             </button>
           </div>

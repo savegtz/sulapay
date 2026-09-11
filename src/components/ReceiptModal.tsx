@@ -79,13 +79,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         </div>
 
         {/* Demo Warning Notice */}
-        <div className="bg-amber-500/15 border-y border-amber-500/30 px-4 py-2 flex items-center gap-2 text-[11px] text-amber-200">
-          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>
-            {language === 'sw' 
-              ? 'RISITI YA MAJARIBIO: Muamala wa sandbox — hakuna pesa halisi iliyokatwa.'
-              : 'DEMO RECEIPT: Simulated sandbox transaction — no real funds moved.'}
-          </span>
+        <div className="bg-amber-500/20 border-y border-amber-500/40 px-4 py-2.5 flex items-start gap-2.5 text-xs text-amber-200">
+          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-bold block text-amber-300">
+              {language === 'sw' ? 'TAARIFA YA MAJARIBIO (SANDBOX DEMO)' : 'SIMULATED DEMO NOTICE'}
+            </span>
+            <span className="text-[11px] leading-relaxed block text-amber-200/90">
+              {language === 'sw' 
+                ? 'Huu ni muamala wa majaribio ya kiteknolojia (TIPS Sandbox). Hakuna fedha halisi za M-Pesa, Tigo, Airtel au Benki zilizohusika au kukatwa.'
+                : 'This is a simulated technology demonstration (TIPS Sandbox). No actual fiat currency, mobile money, or bank balances were debited.'}
+            </span>
+          </div>
         </div>
 
         {/* Receipt Line Items */}

@@ -7,6 +7,8 @@ import { ReceiptModal } from './components/ReceiptModal';
 import { MerchantPOS } from './components/MerchantPOS';
 import { ArchitectureInspector } from './components/ArchitectureInspector';
 import { TopUpModal } from './components/TopUpModal';
+import { AuthModal } from './components/AuthModal';
+import { QRPaymentModal } from './components/QRPaymentModal';
 import { 
   Language, 
   Merchant, 
@@ -40,6 +42,8 @@ export default function App() {
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
   const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [receiptTx, setReceiptTx] = useState<Transaction | null>(null);
 
   // Initialize data from server
@@ -116,6 +120,8 @@ export default function App() {
             onInitiatePayment={handleInitiatePayment}
             onOpenTopUp={() => setIsTopUpModalOpen(true)}
             onOpenEnrollment={() => setIsEnrollmentModalOpen(true)}
+            onOpenQR={() => setIsQRModalOpen(true)}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
             onSelectTransaction={(tx) => setReceiptTx(tx)}
           />
         )}
@@ -162,6 +168,30 @@ export default function App() {
         wallet={wallet}
         language={language}
         onTopUpSuccess={handleTopUpSuccess}
+      />
+
+      <QRPaymentModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        wallet={wallet}
+        merchants={merchants}
+        language={language}
+        onProceedToFacePay={(merchant, amount) => {
+          setSelectedMerchant(merchant);
+          setIsPaymentModalOpen(true);
+        }}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={user}
+        currentWallet={wallet}
+        language={language}
+        onAuthSuccess={(updatedUser, updatedWallet) => {
+          setUser(updatedUser);
+          setWallet(updatedWallet);
+        }}
       />
 
       <ReceiptModal

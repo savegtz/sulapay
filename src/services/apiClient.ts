@@ -5,13 +5,74 @@ import {
   Transaction, 
   PaymentProviderStatus, 
   BiometricVerificationResult,
-  PaymentRail 
+  PaymentRail,
+  DatabaseStatus,
+  RegisterRequest,
+  LoginRequest
 } from '../types';
 
 export const apiClient = {
   async getProfile(): Promise<{ user: UserProfile; wallet: Wallet }> {
     const res = await fetch('/api/user/profile');
     if (!res.ok) throw new Error('Failed to load user profile');
+    return res.json();
+  },
+
+  async register(data: RegisterRequest): Promise<{ user: UserProfile; wallet: Wallet; message: string }> {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.message || 'Usajili umeshindikana');
+    }
+    return result;
+  },
+
+  async login(data: LoginRequest): Promise<{ user: UserProfile; wallet: Wallet; message: string }> {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.message || 'Kuingia kumeshindikana');
+    }
+    return result;
+  },
+
+  async getDemoUsers(): Promise<{ users: Array<{ id: string; fullName: string; phoneNumber: string; nationalIdNida: string; faceAvatarUrl?: string; linkedRail: PaymentRail; balance: number }> }> {
+    const res = await fetch('/api/auth/users');
+    if (!res.ok) throw new Error('Failed to load demo accounts');
+    return res.json();
+  },
+
+  async switchUser(userId: string): Promise<{ user: UserProfile; wallet: Wallet }> {
+    const res = await fetch('/api/auth/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.message || 'Failed to switch user');
+    }
+    return result;
+  },
+
+  async getMerchantQr(merchantId: string): Promise<{ qrDataUrl: string; payload: string }> {
+    const res = await fetch(`/api/merchants/${merchantId}/qr`);
+    if (!res.ok) throw new Error('Failed to generate merchant QR code');
+    const result = await res.json();
+    return result;
+  },
+
+  async getDatabaseStatus(): Promise<DatabaseStatus> {
+    const res = await fetch('/api/db/status');
+    if (!res.ok) throw new Error('Failed to fetch database status');
     return res.json();
   },
 

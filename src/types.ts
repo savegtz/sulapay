@@ -112,3 +112,28 @@ export interface PaymentProviderStatus {
   successRate: number;
   apiProtocol: 'REST_OAUTH2' | 'SOAP_XML' | 'ISO_8583' | 'TIPS_JSON';
 }
+
+export interface DatabaseStatus {
+  connected: boolean;
+  engine: 'PostgreSQL' | 'In-Memory Relational Engine';
+  host?: string;
+  database?: string;
+  tablesCount: number;
+  totalTransactionsPersisted: number;
+  message: string;
+}
+
+export interface RegisterRequest {
+  fullName: string;
+  phoneNumber: string;
+  nationalIdNida: string;
+  email?: string;
+  linkedRail: PaymentRail;
+  pin: string;
+  faceAvatarUrl?: string;
+}
+
+export interface LoginRequest {
+  phoneNumber: string;
+  pin: string;
+}

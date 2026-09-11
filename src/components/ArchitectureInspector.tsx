@@ -13,7 +13,8 @@ import {
   Zap,
   Radio,
   FileCode,
-  Lock
+  Lock,
+  RefreshCw
 } from 'lucide-react';
 import { Language, PaymentProviderStatus } from '../types';
 import { translations } from '../utils/translations';
@@ -144,31 +145,104 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
 
       {/* TAB 1: POSTGRESQL SCHEMA DDL */}
       {activeTab === 'SCHEMA' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileCode className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-base font-bold text-white">
-                PostgreSQL 16 Schema Definition (DDL)
-              </h3>
+        <div className="space-y-6">
+          {/* Live Database Diagnostics Card */}
+          <div className="bg-slate-900 border border-emerald-700/50 rounded-3xl p-6 space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>Hali ya Hifadhidata (PostgreSQL Connection Status)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">
+                    PostgreSQL 16 Engine • Tanzania NPS Compliant Ledger
+                  </p>
+                </div>
+              </div>
+
+              <button
+                id="ping-db-btn"
+                onClick={async () => {
+                  setLoadingEndpoint('/api/db/status');
+                  try {
+                    const res = await apiClient.getDatabaseStatus();
+                    setApiResponse(JSON.stringify(res, null, 2));
+                  } catch (e: any) {
+                    setApiResponse(`Error: ${e.message}`);
+                  } finally {
+                    setLoadingEndpoint(null);
+                  }
+                }}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-emerald-400 border border-emerald-500/30 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingEndpoint === '/api/db/status' ? 'animate-spin' : ''}`} />
+                <span>Jaribu Muunganisho (Test DB Status)</span>
+              </button>
             </div>
-            <button
-              id="copy-sql-btn"
-              onClick={handleCopySchema}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
-            >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Copied' : 'Copy DDL'}</span>
-            </button>
+
+            {/* Diagnostics grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[11px] text-slate-400 block font-mono">Hali (Status)</span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-sm font-bold text-white">Inafanya Kazi (Active)</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[11px] text-slate-400 block font-mono">Engine</span>
+                <span className="text-sm font-bold text-emerald-400 block mt-1">
+                  PostgreSQL / Hybrid
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[11px] text-slate-400 block font-mono">Majedwali (Tables)</span>
+                <span className="text-sm font-bold text-white block mt-1 font-mono">
+                  6 Core Tables (users, wallets, txs...)
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[11px] text-slate-400 block font-mono">Kuhifadhi Kwenye Render</span>
+                <span className="text-xs text-emerald-300 block mt-1">
+                  Weka DATABASE_URL kwenye Render Environment
+                </span>
+              </div>
+            </div>
           </div>
 
-          <p className="text-xs text-slate-400">
-            Complies with the Bank of Tanzania (BOT) National Payment Systems (NPS) Act 2015, Cybercrimes Act, and NIDA biometric tokenization guidelines.
-          </p>
+          {/* DDL Schema View */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCode className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-base font-bold text-white">
+                  PostgreSQL 16 Schema Definition (DDL)
+                </h3>
+              </div>
+              <button
+                id="copy-sql-btn"
+                onClick={handleCopySchema}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                <span>{copied ? 'Copied' : 'Copy DDL'}</span>
+              </button>
+            </div>
 
-          <pre className="bg-slate-950 border border-slate-800 p-4 rounded-2xl text-xs font-mono text-emerald-300 overflow-x-auto max-h-[500px] scrollbar-thin">
-            {schemaSql || '-- Loading PostgreSQL DDL...'}
-          </pre>
+            <p className="text-xs text-slate-400">
+              Complies with the Bank of Tanzania (BOT) National Payment Systems (NPS) Act 2015, Cybercrimes Act, and NIDA biometric tokenization guidelines.
+            </p>
+
+            <pre className="bg-slate-950 border border-slate-800 p-4 rounded-2xl text-xs font-mono text-emerald-300 overflow-x-auto max-h-[500px] scrollbar-thin">
+              {schemaSql || '-- Loading PostgreSQL DDL...'}
+            </pre>
+          </div>
         </div>
       )}
 

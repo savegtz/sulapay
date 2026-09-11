@@ -1,6 +1,6 @@
 {
   "name": "FACEPAY TZ",
-  "description": "Lipa kwa uso - Tanzanian biometric face verification fintech platform for mobile money and bank payments.",
+  "description": "SulaPay (FACEPAY TZ) - Lipa kwa uso. Tanzanian biometric face verification & QR fintech platform for mobile money (M-Pesa, Tigo, Airtel) and bank payments (CRDB, NMB, TIPS).",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

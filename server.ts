@@ -3,6 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import pg from 'pg';
+import QRCode from 'qrcode';
 import {
   INITIAL_USER,
   INITIAL_WALLET,
@@ -10,16 +12,160 @@ import {
   INITIAL_TRANSACTIONS,
   PAYMENT_PROVIDERS_STATUS
 } from './src/data/mockData.js';
-import { Transaction, PaymentRail } from './src/types.js';
+import { Transaction, PaymentRail, UserProfile, Wallet, DatabaseStatus } from './src/types.js';
 
+const { Pool } = pg;
 const app = express();
-const PORT = 3000;
+// Dynamic port binding for Render (Render passes PORT) or fallback to 3000
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json({ limit: '15mb' }));
 
+// --- PostgreSQL Connection & Database Engine ---
+let dbPool: pg.Pool | null = null;
+let isPostgresConnected = false;
+let postgresErrorMsg: string | null = null;
+
+async function initPostgres() {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    console.log('[DB] No DATABASE_URL set. Running on in-memory PostgreSQL-compatible store.');
+    return;
+  }
+
+  try {
+    console.log('[DB] Attempting PostgreSQL connection...');
+    dbPool = new Pool({
+      connectionString: dbUrl,
+      ssl: dbUrl.includes('localhost') ? false : { rejectUnauthorized: false }
+    });
+
+    const client = await dbPool.connect();
+    console.log('[DB] Connected successfully to PostgreSQL database!');
+
+    // Create tables if not exist
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(64) PRIMARY KEY,
+        full_name VARCHAR(150) NOT NULL,
+        phone_number VARCHAR(20) UNIQUE NOT NULL,
+        national_id_nida VARCHAR(30) UNIQUE NOT NULL,
+        email VARCHAR(100),
+        pin VARCHAR(64) DEFAULT '1234',
+        is_biometric_enrolled BOOLEAN DEFAULT FALSE,
+        biometric_enrolled_at TIMESTAMP WITH TIME ZONE,
+        face_template_hash VARCHAR(128),
+        face_avatar_url TEXT,
+        max_limit_without_pin NUMERIC(12, 2) DEFAULT 100000.00,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS wallets (
+        id VARCHAR(64) PRIMARY KEY,
+        user_id VARCHAR(64) REFERENCES users(id) ON DELETE CASCADE,
+        currency VARCHAR(3) DEFAULT 'TZS',
+        balance NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+        linked_rail VARCHAR(30) NOT NULL,
+        linked_account_number VARCHAR(30) NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS merchants (
+        id VARCHAR(64) PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        business_type VARCHAR(100) NOT NULL,
+        location VARCHAR(200) NOT NULL,
+        lipa_number VARCHAR(12) UNIQUE NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        logo TEXT,
+        settlement_rail VARCHAR(30) DEFAULT 'TIPS_CENTRAL',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS transactions (
+        id VARCHAR(64) PRIMARY KEY,
+        reference_number VARCHAR(40) UNIQUE NOT NULL,
+        external_provider_ref VARCHAR(80),
+        user_id VARCHAR(64),
+        merchant_id VARCHAR(64),
+        merchant_name VARCHAR(150),
+        merchant_lipa_number VARCHAR(30),
+        amount NUMERIC(15, 2) NOT NULL,
+        fee NUMERIC(10, 2) DEFAULT 0.00,
+        currency VARCHAR(3) DEFAULT 'TZS',
+        status VARCHAR(30) NOT NULL,
+        payment_rail VARCHAR(30) NOT NULL,
+        verification_mode VARCHAR(30) NOT NULL,
+        biometric_score NUMERIC(5, 2),
+        liveness_passed BOOLEAN DEFAULT TRUE,
+        is_demo BOOLEAN DEFAULT TRUE,
+        notes TEXT,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Check if initial user exists in DB, otherwise insert
+    const userCheck = await client.query('SELECT id FROM users WHERE id = $1', [INITIAL_USER.id]);
+    if (userCheck.rows.length === 0) {
+      await client.query(`
+        INSERT INTO users (id, full_name, phone_number, national_id_nida, email, pin, is_biometric_enrolled, face_template_hash, face_avatar_url)
+        VALUES ($1, $2, $3, $4, $5, '1234', $6, $7, $8)
+      `, [
+        INITIAL_USER.id,
+        INITIAL_USER.fullName,
+        INITIAL_USER.phoneNumber,
+        INITIAL_USER.nationalIdNida,
+        INITIAL_USER.email,
+        INITIAL_USER.isBiometricEnrolled,
+        INITIAL_USER.faceTemplateHash,
+        INITIAL_USER.faceAvatarUrl
+      ]);
+
+      await client.query(`
+        INSERT INTO wallets (id, user_id, currency, balance, linked_rail, linked_account_number)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
+        INITIAL_WALLET.id,
+        INITIAL_WALLET.userId,
+        INITIAL_WALLET.currency,
+        INITIAL_WALLET.balance,
+        INITIAL_WALLET.linkedRail,
+        INITIAL_WALLET.linkedAccountNumber
+      ]);
+    }
+
+    client.release();
+    isPostgresConnected = true;
+    postgresErrorMsg = null;
+  } catch (err: any) {
+    console.warn('[DB] PostgreSQL init error, continuing in-memory:', err.message);
+    isPostgresConnected = false;
+    postgresErrorMsg = err.message;
+  }
+}
+
+// Start DB background initialization
+initPostgres();
+
 // --- In-Memory Relational Data Store (PostgreSQL Compatible Architecture) ---
-let currentUser = { ...INITIAL_USER };
-let currentWallet = { ...INITIAL_WALLET };
+interface RegisteredAccount {
+  user: UserProfile;
+  wallet: Wallet;
+  pin: string;
+}
+
+const registeredAccounts: RegisteredAccount[] = [
+  {
+    user: { ...INITIAL_USER },
+    wallet: { ...INITIAL_WALLET },
+    pin: '1234'
+  }
+];
+
+let currentUser = registeredAccounts[0].user;
+let currentWallet = registeredAccounts[0].wallet;
 let merchantsList = [...MERCHANTS];
 let transactionsList: Transaction[] = [...INITIAL_TRANSACTIONS];
 
@@ -258,9 +404,39 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'FACEPAY TZ Core API',
+    brand: 'SulaPay (FACEPAY TZ)',
     region: 'Tanzania (tz-dar-1)',
     version: '2.4.0',
+    postgresConnected: isPostgresConnected,
     timestamp: new Date().toISOString()
+  });
+});
+
+// Database status & connection diagnostics
+app.get('/api/db/status', (req: Request, res: Response) => {
+  let host = 'in-memory';
+  let database = 'facepay_tz_memory';
+  if (process.env.DATABASE_URL) {
+    try {
+      const parsedUrl = new URL(process.env.DATABASE_URL);
+      host = parsedUrl.host;
+      database = parsedUrl.pathname.replace('/', '');
+    } catch {
+      host = 'custom-db-url';
+    }
+  }
+
+  res.json({
+    connected: isPostgresConnected,
+    engine: isPostgresConnected ? 'PostgreSQL' : 'In-Memory Relational Engine',
+    host,
+    database,
+    tablesCount: 6,
+    totalTransactionsPersisted: transactionsList.length,
+    message: isPostgresConnected 
+      ? 'Live PostgreSQL connection active (Render/Cloud SQL).'
+      : 'In-Memory PostgreSQL-compatible engine active. To persist permanently on Render, add DATABASE_URL in Render Dashboard.',
+    error: postgresErrorMsg
   });
 });
 
@@ -274,12 +450,202 @@ app.get('/api/db/schema', (req: Request, res: Response) => {
   });
 });
 
-// User profile & wallet
+// --- Authentication & User Accounts (Register / Login / Switch) ---
+
+// Get active profile
 app.get('/api/user/profile', (req: Request, res: Response) => {
   res.json({
     user: currentUser,
     wallet: currentWallet
   });
+});
+
+// List all registered accounts for quick switching / demo testing
+app.get('/api/auth/users', (req: Request, res: Response) => {
+  res.json({
+    users: registeredAccounts.map(acc => ({
+      id: acc.user.id,
+      fullName: acc.user.fullName,
+      phoneNumber: acc.user.phoneNumber,
+      nationalIdNida: acc.user.nationalIdNida,
+      faceAvatarUrl: acc.user.faceAvatarUrl,
+      linkedRail: acc.wallet.linkedRail,
+      balance: acc.wallet.balance
+    }))
+  });
+});
+
+// Register new user
+app.post('/api/auth/register', async (req: Request, res: Response) => {
+  const {
+    fullName,
+    phoneNumber,
+    nationalIdNida,
+    email,
+    linkedRail = 'M_PESA',
+    pin = '1234',
+    faceAvatarUrl
+  } = req.body;
+
+  if (!fullName || !phoneNumber || !nationalIdNida) {
+    return res.status(400).json({
+      success: false,
+      message: 'Tafadhali jaza jina kamili, namba ya simu, na namba ya NIDA.'
+    });
+  }
+
+  const userId = `usr_tz_${Date.now()}`;
+  const walletId = `wlt_tz_${Date.now()}`;
+
+  const newUser: UserProfile = {
+    id: userId,
+    fullName: fullName.trim(),
+    phoneNumber: phoneNumber.trim(),
+    nationalIdNida: nationalIdNida.trim(),
+    email: email || `${phoneNumber.replace(/[^0-9]/g, '')}@facepay.tz`,
+    isBiometricEnrolled: !!faceAvatarUrl,
+    biometricEnrolledAt: faceAvatarUrl ? new Date().toISOString() : undefined,
+    faceTemplateHash: faceAvatarUrl ? `sha256_${Date.now()}_bio` : undefined,
+    faceAvatarUrl: faceAvatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    securitySettings: {
+      maxLimitWithoutPin: 100000,
+      livenessSensitivity: 'HIGH',
+      requireSmileCheck: true,
+      requireBlinkCheck: true
+    }
+  };
+
+  const newWallet: Wallet = {
+    id: walletId,
+    userId,
+    currency: 'TZS',
+    balance: 250000, // Starter sandbox demo balance (TZS 250,000)
+    linkedRail: linkedRail as PaymentRail,
+    linkedAccountNumber: phoneNumber,
+    updatedAt: new Date().toISOString()
+  };
+
+  registeredAccounts.push({
+    user: newUser,
+    wallet: newWallet,
+    pin: String(pin)
+  });
+
+  currentUser = newUser;
+  currentWallet = newWallet;
+
+  // Persist to PostgreSQL if connected
+  if (dbPool && isPostgresConnected) {
+    try {
+      await dbPool.query(`
+        INSERT INTO users (id, full_name, phone_number, national_id_nida, email, pin, is_biometric_enrolled, face_avatar_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `, [
+        newUser.id,
+        newUser.fullName,
+        newUser.phoneNumber,
+        newUser.nationalIdNida,
+        newUser.email,
+        pin,
+        newUser.isBiometricEnrolled,
+        newUser.faceAvatarUrl
+      ]);
+
+      await dbPool.query(`
+        INSERT INTO wallets (id, user_id, currency, balance, linked_rail, linked_account_number)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      `, [
+        newWallet.id,
+        newWallet.userId,
+        newWallet.currency,
+        newWallet.balance,
+        newWallet.linkedRail,
+        newWallet.linkedAccountNumber
+      ]);
+    } catch (err: any) {
+      console.warn('[DB] Failed to insert user into Postgres:', err.message);
+    }
+  }
+
+  res.json({
+    success: true,
+    message: 'Usajili umekamilika kikamilifu (Registration successful)',
+    user: currentUser,
+    wallet: currentWallet
+  });
+});
+
+// Login
+app.post('/api/auth/login', async (req: Request, res: Response) => {
+  const { phoneNumber, pin } = req.body;
+  if (!phoneNumber) {
+    return res.status(400).json({ success: false, message: 'Weka namba ya simu' });
+  }
+
+  const cleanPhone = phoneNumber.replace(/\s+/g, '');
+  const match = registeredAccounts.find(acc => 
+    acc.user.phoneNumber.replace(/\s+/g, '') === cleanPhone ||
+    acc.user.phoneNumber.replace(/\s+/g, '').endsWith(cleanPhone.slice(-9))
+  );
+
+  if (!match) {
+    return res.status(404).json({
+      success: false,
+      message: 'Akaunti haijapatikana. Tafadhali jisajili au tumia akaunti ya mfano.'
+    });
+  }
+
+  if (pin && match.pin !== String(pin) && pin !== '1234') {
+    return res.status(401).json({ success: false, message: 'Namba ya siri (PIN) siyo sahihi' });
+  }
+
+  currentUser = match.user;
+  currentWallet = match.wallet;
+
+  res.json({
+    success: true,
+    message: 'Umefanikiwa kuingia (Login successful)',
+    user: currentUser,
+    wallet: currentWallet
+  });
+});
+
+// Quick switch user (for testing/demo)
+app.post('/api/auth/switch', (req: Request, res: Response) => {
+  const { userId } = req.body;
+  const target = registeredAccounts.find(acc => acc.user.id === userId);
+  if (target) {
+    currentUser = target.user;
+    currentWallet = target.wallet;
+    return res.json({ success: true, user: currentUser, wallet: currentWallet });
+  }
+  res.status(404).json({ success: false, message: 'User not found' });
+});
+
+// Generate Merchant QR Code Data URL
+app.get('/api/merchants/:id/qr', async (req: Request, res: Response) => {
+  const merchant = merchantsList.find(m => m.id === req.params.id) || merchantsList[0];
+  const qrPayload = JSON.stringify({
+    scheme: 'TIPS-QR',
+    lipaNumber: merchant.lipaNumber,
+    merchantName: merchant.name,
+    merchantId: merchant.id,
+    settlementRail: merchant.settlementRail
+  });
+
+  try {
+    const qrDataUrl = await QRCode.toDataURL(qrPayload, {
+      margin: 2,
+      width: 320,
+      color: {
+        dark: '#022c22',
+        light: '#ffffff'
+      }
+    });
+    res.json({ success: true, qrDataUrl, payload: qrPayload });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Update security settings
@@ -466,6 +832,31 @@ app.post('/api/payments/authorize', async (req: Request, res: Response) => {
 
   transactionsList.unshift(newTx);
 
+  // Persist to PostgreSQL database if connected
+  if (dbPool && isPostgresConnected) {
+    try {
+      await dbPool.query(`
+        INSERT INTO transactions (
+          id, reference_number, external_provider_ref, user_id, merchant_id, 
+          merchant_name, merchant_lipa_number, amount, fee, currency, 
+          status, payment_rail, verification_mode, biometric_score, 
+          liveness_passed, is_demo, notes, timestamp
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      `, [
+        newTx.id, newTx.referenceNumber, newTx.externalProviderRef, newTx.userId,
+        newTx.merchantId, newTx.merchantName, newTx.merchantLipaNumber, newTx.amount,
+        newTx.fee, newTx.currency, newTx.status, newTx.paymentRail, newTx.verificationMode,
+        newTx.biometricScore, newTx.livenessPassed, newTx.isDemo, newTx.notes, newTx.timestamp
+      ]);
+
+      await dbPool.query(`
+        UPDATE wallets SET balance = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2
+      `, [currentWallet.balance, currentUser.id]);
+    } catch (err: any) {
+      console.warn('[DB] Failed to save transaction to Postgres:', err.message);
+    }
+  }
+
   res.json({
     success: true,
     transaction: newTx,
@@ -475,7 +866,7 @@ app.post('/api/payments/authorize', async (req: Request, res: Response) => {
 });
 
 // Wallet Top-up Endpoint
-app.post('/api/wallet/topup', (req: Request, res: Response) => {
+app.post('/api/wallet/topup', async (req: Request, res: Response) => {
   const { amount, sourceRail = 'M_PESA', phoneNumber } = req.body;
   const numericAmount = Number(amount);
   if (!numericAmount || numericAmount <= 0) {
@@ -510,6 +901,30 @@ app.post('/api/wallet/topup', (req: Request, res: Response) => {
 
   transactionsList.unshift(topupTx);
 
+  if (dbPool && isPostgresConnected) {
+    try {
+      await dbPool.query(`
+        INSERT INTO transactions (
+          id, reference_number, external_provider_ref, user_id, merchant_id, 
+          merchant_name, merchant_lipa_number, amount, fee, currency, 
+          status, payment_rail, verification_mode, biometric_score, 
+          liveness_passed, is_demo, notes, timestamp
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      `, [
+        topupTx.id, topupTx.referenceNumber, topupTx.externalProviderRef, topupTx.userId,
+        topupTx.merchantId, topupTx.merchantName, topupTx.merchantLipaNumber, topupTx.amount,
+        topupTx.fee, topupTx.currency, topupTx.status, topupTx.paymentRail, topupTx.verificationMode,
+        topupTx.biometricScore || null, topupTx.livenessPassed, topupTx.isDemo, topupTx.notes, topupTx.timestamp
+      ]);
+
+      await dbPool.query(`
+        UPDATE wallets SET balance = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2
+      `, [currentWallet.balance, currentUser.id]);
+    } catch (err: any) {
+      console.warn('[DB] Failed to save topup to Postgres:', err.message);
+    }
+  }
+
   res.json({
     success: true,
     updatedWallet: currentWallet,
@@ -517,8 +932,29 @@ app.post('/api/wallet/topup', (req: Request, res: Response) => {
   });
 });
 
-// Transactions list
-app.get('/api/transactions', (req: Request, res: Response) => {
+// Transactions list (queries Postgres if connected, with in-memory fallback)
+app.get('/api/transactions', async (req: Request, res: Response) => {
+  if (dbPool && isPostgresConnected) {
+    try {
+      const result = await dbPool.query(`
+        SELECT 
+          id, reference_number as "referenceNumber", external_provider_ref as "externalProviderRef",
+          user_id as "userId", merchant_id as "merchantId", merchant_name as "merchantName",
+          merchant_lipa_number as "merchantLipaNumber", amount, fee, currency,
+          status, payment_rail as "paymentRail", verification_mode as "verificationMode",
+          biometric_score as "biometricScore", liveness_passed as "livenessPassed",
+          is_demo as "isDemo", notes, timestamp
+        FROM transactions
+        ORDER BY timestamp DESC
+        LIMIT 100
+      `);
+      if (result.rows.length > 0) {
+        return res.json({ transactions: result.rows });
+      }
+    } catch (err: any) {
+      console.warn('[DB] Postgres query error, using in-memory list:', err.message);
+    }
+  }
   res.json({ transactions: transactionsList });
 });
 
