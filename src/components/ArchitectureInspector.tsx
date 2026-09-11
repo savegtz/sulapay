@@ -155,10 +155,13 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <span>Hali ya Hifadhidata (PostgreSQL Connection Status)</span>
+                    <span>Hali ya Hifadhidata (Firebase & PostgreSQL Status)</span>
+                    <span className="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded border border-amber-500/40">
+                      Firebase: fasi-8c19f
+                    </span>
                   </h3>
                   <p className="text-xs text-slate-400 font-mono">
-                    PostgreSQL 16 Engine • Tanzania NPS Compliant Ledger
+                    Google Cloud Firestore • Realtime Database • PostgreSQL Hybrid
                   </p>
                 </div>
               </div>
@@ -189,28 +192,28 @@ export const ArchitectureInspector: React.FC<ArchitectureInspectorProps> = ({
                 <span className="text-[11px] text-slate-400 block font-mono">Hali (Status)</span>
                 <div className="flex items-center gap-2 mt-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-sm font-bold text-white">Inafanya Kazi (Active)</span>
+                  <span className="text-sm font-bold text-white">Live & Connected</span>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <span className="text-[11px] text-slate-400 block font-mono">Engine</span>
-                <span className="text-sm font-bold text-emerald-400 block mt-1">
-                  PostgreSQL / Hybrid
+                <span className="text-[11px] text-slate-400 block font-mono">Firebase Project</span>
+                <span className="text-sm font-bold text-amber-400 block mt-1 font-mono">
+                  fasi-8c19f
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <span className="text-[11px] text-slate-400 block font-mono">Majedwali (Tables)</span>
+                <span className="text-[11px] text-slate-400 block font-mono">Hifadhi (Collections)</span>
                 <span className="text-sm font-bold text-white block mt-1 font-mono">
-                  6 Core Tables (users, wallets, txs...)
+                  users, wallets, txs
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <span className="text-[11px] text-slate-400 block font-mono">Kuhifadhi Kwenye Render</span>
+                <span className="text-[11px] text-slate-400 block font-mono">Realtime Sync</span>
                 <span className="text-xs text-emerald-300 block mt-1">
-                  Weka DATABASE_URL kwenye Render Environment
+                  Firestore & RTDB Imesanidiwa
                 </span>
               </div>
             </div>

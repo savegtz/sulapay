@@ -140,9 +140,22 @@ async function initPostgres() {
     isPostgresConnected = true;
     postgresErrorMsg = null;
   } catch (err: any) {
-    console.warn('[DB] PostgreSQL init error, continuing in-memory:', err.message);
+    if (dbPool) {
+      try {
+        await dbPool.end();
+      } catch (_) {}
+      dbPool = null;
+    }
+    const isInternalRenderHost = dbUrl.includes('dpg-') && !dbUrl.includes('.render.com');
+    if (isInternalRenderHost) {
+      console.warn('[DB] Internal Render hostname detected outside Render network.');
+      console.warn('[DB] To connect from outside Render, please use the "External Database URL" from Render Connections tab.');
+      postgresErrorMsg = 'Internal Render URL used outside Render network. Use External Database URL for external access.';
+    } else {
+      console.warn('[DB] PostgreSQL init error, continuing in-memory:', err.message);
+      postgresErrorMsg = err.message;
+    }
     isPostgresConnected = false;
-    postgresErrorMsg = err.message;
   }
 }
 

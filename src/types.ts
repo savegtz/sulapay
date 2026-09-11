@@ -115,7 +115,7 @@ export interface PaymentProviderStatus {
 
 export interface DatabaseStatus {
   connected: boolean;
-  engine: 'PostgreSQL' | 'In-Memory Relational Engine';
+  engine: 'PostgreSQL' | 'In-Memory Relational Engine' | 'Firebase Firestore (fasi-8c19f)' | string;
   host?: string;
   database?: string;
   tablesCount: number;
