@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with Tanzanian NIDA identification and biometric face data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "nationalIdNida": { "type": "string" },
+        "linkedRail": { "type": "string" },
+        "pin": { "type": "string" },
+        "faceAvatarUrl": { "type": "string" },
+        "biometricTemplate": { "type": "string" },
+        "isBiometricEnrolled": { "type": "boolean" },
+        "role": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "fullName", "phoneNumber", "linkedRail"]
+    },
+    "Wallet": {
+      "title": "Wallet",
+      "description": "User digital wallet linked to TIPS payment rails",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "balance": { "type": "number" },
+        "currency": { "type": "string" },
+        "linkedRail": { "type": "string" },
+        "dailyLimit": { "type": "number" },
+        "isBiometricEnabled": { "type": "boolean" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["id", "userId", "balance", "currency", "linkedRail"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Biometric or instant payment transaction processed through TIPS",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderUserId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "recipientMerchantId": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "amount": { "type": "number" },
+        "fee": { "type": "number" },
+        "status": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "rail": { "type": "string" },
+        "referenceNumber": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "isOfflineVoucher": { "type": "boolean" }
+      },
+      "required": ["id", "senderUserId", "recipientName", "amount", "status", "rail", "referenceNumber"]
+    },
+    "Merchant": {
+      "title": "Merchant",
+      "description": "Merchant business registered with TIPS payment switch",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "businessName": { "type": "string" },
+        "merchantCode": { "type": "string" },
+        "tipsAlias": { "type": "string" },
+        "category": { "type": "string" },
+        "qrCodeValue": { "type": "string" },
+        "soundboxId": { "type": "string" },
+        "bankAccount": { "type": "string" },
+        "isSoundboxActive": { "type": "boolean" }
+      },
+      "required": ["id", "businessName", "merchantCode", "tipsAlias"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile collection"
+    },
+    "/wallets/{walletId}": {
+      "schema": "Wallet",
+      "description": "User wallet collection"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "TIPS transactions collection"
+    },
+    "/merchants/{merchantId}": {
+      "schema": "Merchant",
+      "description": "Registered merchants collection"
+    }
+  }
+}
