@@ -16,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Language, ThemeMode } from '../types';
+import { ReceiptScannerModal } from './ReceiptScannerModal';
 
 export interface SplitItem {
   id: string;
@@ -117,6 +118,7 @@ export const SplitBillFlow: React.FC<SplitBillFlowProps> = ({
   // Active requested bill (after creation)
   const [requestedBill, setRequestedBill] = useState<SplitBillData | null>(null);
   const [showBillDetailsModal, setShowBillDetailsModal] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   // Friends search filter in ADD_FRIENDS
   const [searchFriend, setSearchFriend] = useState('');
@@ -292,7 +294,7 @@ export const SplitBillFlow: React.FC<SplitBillFlowProps> = ({
                 {/* 1. Create with receipt */}
                 <button
                   id="split-create-receipt-btn"
-                  onClick={() => setCurrentScreen('CREATE_FORM')}
+                  onClick={() => setIsScannerOpen(true)}
                   className={`group rounded-3xl p-3 border transition-all text-left flex flex-col active:scale-95 ${
                     isDark 
                       ? 'bg-slate-900/90 border-slate-800 hover:border-purple-500/50' 
@@ -1167,6 +1169,20 @@ export const SplitBillFlow: React.FC<SplitBillFlowProps> = ({
           </div>
         </div>
       )}
+
+      {/* AI/OCR RECEIPT SCANNER MODAL */}
+      <ReceiptScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        language={language}
+        theme={theme}
+        onReceiptScanned={(scannedData) => {
+          setBillName(scannedData.billName);
+          setCategory(scannedData.category);
+          setItems(scannedData.items);
+          setCurrentScreen('ADD_ITEMS');
+        }}
+      />
 
     </div>
   );

@@ -31,12 +31,17 @@ import {
   ArrowRight,
   Sparkles as SparklesIcon,
   Tag,
-  Search
+  Search,
+  Bell
 } from 'lucide-react';
 import { Language, Merchant, ThemeMode, Transaction, UserProfile, Wallet } from '../types';
 import { formatTZS, formatDate } from '../utils/formatters';
 import { SplitBillFlow } from './SplitBillFlow';
 import { ProfileScreen } from './ProfileScreen';
+import { SpendingAnalyticsModal } from './SpendingAnalyticsModal';
+import { CardsAndBanksModal } from './CardsAndBanksModal';
+import { NotificationsSoundboxModal } from './NotificationsSoundboxModal';
+import { RewardsLoyaltyModal } from './RewardsLoyaltyModal';
 
 interface MobileFintechHomeProps {
   user: UserProfile;
@@ -84,6 +89,9 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
   const [promoModal, setPromoModal] = useState<{ title: string; desc: string; code: string; discount: string } | null>(null);
   const [isSplitBillOpen, setIsSplitBillOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isCardsAndBanksOpen, setIsCardsAndBanksOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isRewardsOpen, setIsRewardsOpen] = useState(false);
   const isDark = theme === 'dark';
 
   // Quick service bill payment modal
@@ -199,24 +207,43 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
             </div>
           </button>
 
-          {/* Floating Bill / Reward Voucher Badge */}
-          <div className="relative">
-            <button 
-              id="mobile-rewards-voucher-btn"
-              onClick={onOpenQR}
-              title={language === 'sw' ? 'Vocha na Zawadi' : 'Rewards & Vouchers'}
-              className="relative p-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-sm border border-purple-200 dark:border-slate-700 active:scale-95 transition-transform"
-            >
-              {/* Stylized floating receipt icon with coin badge */}
-              <div className="relative">
-                <Receipt className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[8px] flex items-center justify-center border border-white dark:border-slate-900 shadow-xs">
-                  $
-                </span>
-              </div>
-            </button>
-            {/* Unread indicator */}
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white dark:border-slate-900 animate-pulse" />
+          {/* Action Icons: Notifications Bell & Rewards Voucher */}
+          <div className="flex items-center gap-2">
+            {/* 1. Notifications & Soundbox Bell */}
+            <div className="relative">
+              <button 
+                id="mobile-notifications-btn"
+                onClick={() => setIsNotificationsOpen(true)}
+                title={language === 'sw' ? 'Arifa & Soundbox' : 'Notifications & Soundbox'}
+                className="relative p-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-sm border border-purple-200 dark:border-slate-700 active:scale-95 transition-transform"
+              >
+                <Bell className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </button>
+              {/* Unread badge 4 */}
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#543eed] text-white text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs animate-pulse">
+                4
+              </span>
+            </div>
+
+            {/* 2. Floating Bill / Reward Voucher Badge */}
+            <div className="relative">
+              <button 
+                id="mobile-rewards-voucher-btn"
+                onClick={() => setIsRewardsOpen(true)}
+                title={language === 'sw' ? 'Vocha na Zawadi za Gold Member' : 'Gold Member Rewards & Vouchers'}
+                className="relative p-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-sm border border-purple-200 dark:border-slate-700 active:scale-95 transition-transform"
+              >
+                {/* Stylized floating receipt icon with coin badge */}
+                <div className="relative">
+                  <Receipt className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[8px] flex items-center justify-center border border-white dark:border-slate-900 shadow-xs">
+                    $
+                  </span>
+                </div>
+              </button>
+              {/* Promo badge */}
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900" />
+            </div>
           </div>
         </div>
 
@@ -273,18 +300,34 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
               </div>
             </div>
 
-            {/* Currency Mode Switcher Pill */}
-            <button
-              id="currency-toggle-pill"
-              onClick={() => setCurrencyMode(prev => prev === 'TZS' ? 'USD' : 'TZS')}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
-                isDark 
-                  ? 'bg-slate-800 text-indigo-300 border-slate-700' 
-                  : 'bg-indigo-50 text-indigo-700 border-indigo-100'
-              }`}
-            >
-              {currencyMode}
-            </button>
+            {/* Currency Mode Switcher Pill & Cards/Banks Button */}
+            <div className="flex items-center gap-1.5">
+              <button
+                id="manage-cards-banks-btn"
+                onClick={() => setIsCardsAndBanksOpen(true)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1 transition-colors ${
+                  isDark 
+                    ? 'bg-purple-950/40 text-purple-300 border-purple-800 hover:bg-purple-900/40' 
+                    : 'bg-purple-50 text-[#543eed] border-purple-200 hover:bg-purple-100'
+                }`}
+                title={language === 'sw' ? 'Dhibiti Kadi & Benki' : 'Manage Cards & Banks'}
+              >
+                <CreditCard className="w-3 h-3" />
+                <span>{language === 'sw' ? 'Kadi' : 'Cards'}</span>
+              </button>
+
+              <button
+                id="currency-toggle-pill"
+                onClick={() => setCurrencyMode(prev => prev === 'TZS' ? 'USD' : 'TZS')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                  isDark 
+                    ? 'bg-slate-800 text-indigo-300 border-slate-700' 
+                    : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                }`}
+              >
+                {currencyMode}
+              </button>
+            </div>
           </div>
 
           {/* Quick Access Section Heading */}
@@ -532,18 +575,10 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
             </span>
           </button>
 
-          {/* 7. E-Money (Pochi za Simu) - Exact image style: Purple Phone with Orange Card */}
+          {/* 7. E-Money (Pochi za Simu & Kadi) */}
           <button
             id="service-emoney-btn"
-            onClick={() => {
-              handleOpenService(
-                language === 'sw' ? 'Hamisha kwenda Pochi za Simu (M-Pesa / Tigo Pesa)' : 'E-Money Wallets (M-Pesa / TIPS)',
-                'E_MONEY',
-                <Smartphone className="w-6 h-6 text-amber-500" />,
-                '0784 999 111',
-                language === 'sw' ? 'Namba ya Simu ya Mpokeaji' : 'Receiver Phone Number'
-              );
-            }}
+            onClick={() => setIsCardsAndBanksOpen(true)}
             className="flex flex-col items-center group active:scale-95 transition-transform"
           >
             <div className="w-14 h-14 rounded-full bg-[#f2e7fe] dark:bg-purple-950/40 text-purple-950 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
@@ -932,191 +967,16 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
         </div>
       </div>
 
-      {/* MODAL: ALL TRANSACTIONS (When "See all" is clicked) */}
-      {showAllTransactionsModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md max-h-[85vh] rounded-t-3xl sm:rounded-3xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden">
-            
-            {/* Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  {language === 'sw' ? 'Historia Kamili ya Miamala' : 'All Transactions'}
-                </h3>
-                <p className="text-xs text-slate-400">
-                  BoT TIPS Real-Time FacePay Logs
-                </p>
-              </div>
-              <button
-                onClick={() => setShowAllTransactionsModal(false)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* List */}
-            <div className="p-4 overflow-y-auto space-y-3 flex-1">
-              {/* 1. Netflix */}
-              <div 
-                onClick={() => {
-                  setShowAllTransactionsModal(false);
-                  onSelectTransaction({
-                    id: 'tx-netflix-sub',
-                    userId: user.id,
-                    userName: user.fullName,
-                    merchantId: 'merch-netflix',
-                    merchantName: 'Netflix',
-                    merchantLipaNumber: 'NETFLIX-GLOBAL',
-                    amount: 59500,
-                    status: 'COMPLETED',
-                    paymentRail: 'VISA',
-                    referenceNumber: 'FP-NTFX-9921',
-                    externalProviderRef: 'TIPS-VISA-882190',
-                    verificationMode: 'FACIAL_BIOMETRICS',
-                    faceMatchScore: 99.4,
-                    createdAt: new Date().toISOString()
-                  });
-                }}
-                className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center shrink-0">
-                    <span className="text-[#E50914] font-black text-sm">N</span>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Netflix</h4>
-                    <p className="text-[10px] text-slate-400">Subscription • VISA</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-red-500 font-sans block">-$22,99</span>
-                  <span className="text-[10px] text-slate-400">12.36 PM</span>
-                </div>
-              </div>
-
-              {/* 2. Spotify */}
-              <div 
-                onClick={() => {
-                  setShowAllTransactionsModal(false);
-                  onSelectTransaction({
-                    id: 'tx-spotify-sub',
-                    userId: user.id,
-                    userName: user.fullName,
-                    merchantId: 'merch-spotify',
-                    merchantName: 'Spotify',
-                    merchantLipaNumber: 'SPOTIFY-PREMIUM',
-                    amount: 41500,
-                    status: 'COMPLETED',
-                    paymentRail: 'M_PESA',
-                    referenceNumber: 'FP-SPOT-7712',
-                    externalProviderRef: 'TIPS-M-PESA-449102',
-                    verificationMode: 'FACIAL_BIOMETRICS',
-                    faceMatchScore: 99.6,
-                    createdAt: new Date().toISOString()
-                  });
-                }}
-                className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center shrink-0">
-                    <span className="text-[#1ed760] font-black text-sm">●</span>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">Spotify</h4>
-                    <p className="text-[10px] text-slate-400">Subscription • M-Pesa</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-red-500 font-sans block">-$15,99</span>
-                  <span className="text-[10px] text-slate-400">10.12 AM</span>
-                </div>
-              </div>
-
-              {/* 3. ChatGPT */}
-              <div 
-                onClick={() => {
-                  setShowAllTransactionsModal(false);
-                  onSelectTransaction({
-                    id: 'tx-chatgpt-sub',
-                    userId: user.id,
-                    userName: user.fullName,
-                    merchantId: 'merch-openai',
-                    merchantName: 'ChatGPT',
-                    merchantLipaNumber: 'OPENAI-PLUS',
-                    amount: 52000,
-                    status: 'COMPLETED',
-                    paymentRail: 'TIGO_PESA',
-                    referenceNumber: 'FP-GPT-5541',
-                    externalProviderRef: 'TIPS-TIGO-718290',
-                    verificationMode: 'FACIAL_BIOMETRICS',
-                    faceMatchScore: 99.2,
-                    createdAt: new Date().toISOString()
-                  });
-                }}
-                className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center shrink-0">
-                    <span className="text-white font-bold text-xs">AI</span>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">ChatGPT</h4>
-                    <p className="text-[10px] text-slate-400">Subscription • Tigo Pesa</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-xs font-bold text-red-500 font-sans block">-$20,00</span>
-                  <span className="text-[10px] text-slate-400">09.00 AM</span>
-                </div>
-              </div>
-
-              {/* Additional transactions from the system */}
-              {transactions.map((tx) => (
-                <div
-                  key={tx.id}
-                  onClick={() => {
-                    setShowAllTransactionsModal(false);
-                    onSelectTransaction(tx);
-                  }}
-                  className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-slate-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                      <ScanFace className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[160px]">
-                        {tx.merchantName}
-                      </h4>
-                      <p className="text-[10px] text-slate-400">
-                        {formatDate(tx.createdAt)} • {tx.paymentRail}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-slate-900 dark:text-white block font-mono">
-                      - {formatTZS(tx.amount)}
-                    </span>
-                    <span className="text-[9px] font-bold text-emerald-600 uppercase">
-                      {tx.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-              <button
-                onClick={() => setShowAllTransactionsModal(false)}
-                className="w-full py-3 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-xs font-bold"
-              >
-                {language === 'sw' ? 'Funga' : 'Close'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* MODAL: COMPREHENSIVE SPENDING ANALYTICS & STATEMENTS */}
+      <SpendingAnalyticsModal
+        isOpen={showAllTransactionsModal}
+        onClose={() => setShowAllTransactionsModal(false)}
+        transactions={transactions}
+        language={language}
+        theme={theme}
+        onSelectTransaction={onSelectTransaction}
+        currencyMode={currencyMode}
+      />
 
       {/* MODAL: PROMO VOUCHER DETAILS */}
       {promoModal && (
@@ -1264,6 +1124,41 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
         onOpenBiometrics={() => {
           setIsProfileOpen(false);
           onInitiatePayment();
+        }}
+      />
+
+      {/* Cards and Banks Management Modal */}
+      <CardsAndBanksModal
+        isOpen={isCardsAndBanksOpen}
+        onClose={() => setIsCardsAndBanksOpen(false)}
+        language={language}
+        theme={theme}
+        user={user}
+        wallet={wallet}
+      />
+
+      {/* Notifications & Audio Soundbox Modal */}
+      <NotificationsSoundboxModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        language={language}
+        theme={theme}
+      />
+
+      {/* Rewards & Gold Loyalty Modal */}
+      <RewardsLoyaltyModal
+        isOpen={isRewardsOpen}
+        onClose={() => setIsRewardsOpen(false)}
+        language={language}
+        theme={theme}
+        user={user}
+        onRedeemSuccess={(code) => {
+          setPromoModal({
+            title: language === 'sw' ? 'Vocha Imekombolewa Kikamilifu!' : 'Voucher Successfully Redeemed!',
+            desc: language === 'sw' ? 'Tumia msimbo huu kupata punguzo la kipekee kwenye malipo yako yajayo.' : 'Use this promo code for an exclusive instant discount on your next transaction.',
+            code,
+            discount: '15%'
+          });
         }}
       />
 
