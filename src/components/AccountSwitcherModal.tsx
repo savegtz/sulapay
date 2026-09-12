@@ -57,12 +57,12 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                {language === 'sw' ? 'Badili Akaunti ya Majaribio (Multi-Account Switcher)' : 'Switch Demo Account'}
+                {language === 'sw' ? 'Akaunti Zilizosajiliwa (FacePay)' : 'Connected FacePay Accounts'}
               </h3>
               <p className="text-xs text-slate-400">
                 {language === 'sw' 
-                  ? 'Chagua akaunti yenye mtandao tofauti (M-Pesa, Tigo, Airtel, Benki) kwa kubofya mara 1' 
-                  : 'Instant 1-click test accounts across Tanzanian mobile money & banks'}
+                  ? 'Chagua akaunti iliyounganishwa na mtandao (M-Pesa, Tigo, Airtel, Benki) kwenye Firebase' 
+                  : 'Select an account connected with Tanzanian mobile money or bank on Firebase'}
               </p>
             </div>
           </div>
@@ -79,7 +79,7 @@ export const AccountSwitcherModal: React.FC<AccountSwitcherModalProps> = ({
         {/* Content List */}
         <div className="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
           <div className="text-xs text-slate-400 font-medium px-1">
-            {language === 'sw' ? 'Akaunti 5 za Kujaribu Zilizopo:' : 'Available Demo Tanzanian Personas:'}
+            {language === 'sw' ? 'Akaunti Zilizopo kwenye Hifadhidata:' : 'Available Accounts on Database:'}
           </div>
 
           {DEMO_ACCOUNTS.map((acc) => {

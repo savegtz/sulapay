@@ -289,8 +289,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </p>
                 <p>
                   {language === 'sw'
-                    ? 'Unaweza kuingia kwa namba yoyote ya simu iliyosajiliwa. PIN ya majaribio ni 1234.'
-                    : 'You can log in with any registered phone number. Demo PIN is 1234.'}
+                    ? 'Weka namba ya simu iliyosajiliwa na namba yako ya siri (PIN).'
+                    : 'Enter your registered phone number and 4-digit security PIN.'}
                 </p>
               </div>
 
@@ -304,12 +304,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <span>{language === 'sw' ? 'Ingia Kwenye Akaunti' : 'Sign In to Account'}</span>
               </button>
 
-              {/* Demo quick-fill options for testing */}
+              {/* Registered quick-fill options */}
               {demoAccounts.length > 0 && (
                 <div className="pt-3 border-t border-slate-800/80 space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-semibold text-slate-400">
-                      {language === 'sw' ? 'Akaunti za Kujaribia (Bofya kuweka namba):' : 'Demo Accounts (Click to fill phone):'}
+                      {language === 'sw' ? 'Akaunti za Mfumo (Bofya kuweka namba):' : 'System Accounts (Click to fill phone):'}
                     </span>
                     <span className="text-emerald-400 font-mono text-[10px]">PIN: 1234</span>
                   </div>
@@ -436,13 +436,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               </div>
 
-              {/* Starter sandbox balance perk */}
+              {/* Starter balance */}
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs text-emerald-300">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-emerald-400" />
-                  <span>{language === 'sw' ? 'Salio la kuanzia majaribio:' : 'Starter demo balance:'}</span>
+                  <span>{language === 'sw' ? 'Salio la kuanzia kwenye pochi:' : 'Starter wallet balance:'}</span>
                 </div>
-                <span className="font-mono font-bold text-white">TZS 250,000 (Sandbox)</span>
+                <span className="font-mono font-bold text-white">TZS 250,000</span>
               </div>
 
               <button

@@ -87,14 +87,22 @@ export default function App() {
     firebaseService.ensureAuth().catch(() => {});
   }, []);
 
-  // Real-time Firebase RTDB balance listener for active wallet
+  // Real-time Firebase Cloud Firestore balance & transactions listener
   useEffect(() => {
     if (!wallet?.id) return;
-    const unsubscribe = firebaseService.subscribeToWallet(wallet.id, (newBalance) => {
-      setWallet(prev => (prev.balance !== newBalance ? { ...prev, balance: newBalance } : prev));
+    const unsubWallet = firebaseService.subscribeToWallet(wallet.id, (updated) => {
+      if (updated.balance !== undefined) {
+        setWallet(prev => (prev.balance !== updated.balance ? { ...prev, balance: updated.balance } : prev));
+      }
+    });
+    const unsubTx = firebaseService.subscribeToTransactions((liveTxs) => {
+      if (liveTxs && liveTxs.length > 0) {
+        setTransactions(liveTxs);
+      }
     });
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubWallet) unsubWallet();
+      if (unsubTx) unsubTx();
     };
   }, [wallet?.id]);
 

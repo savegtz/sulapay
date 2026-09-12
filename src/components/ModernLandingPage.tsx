@@ -19,7 +19,8 @@ import {
   CreditCard,
   QrCode,
   LogIn,
-  UserPlus
+  UserPlus,
+  Database
 } from 'lucide-react';
 import { Language, UserRole } from '../types';
 import { soundbox } from '../utils/soundboxAudio';
@@ -173,7 +174,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
                     className="px-4 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs border border-slate-800 flex items-center gap-2 transition-colors"
                   >
                     <Users className="w-4 h-4 text-sky-400" />
-                    <span>{language === 'sw' ? 'Badili Akaunti (5 Personas)' : 'Switch 5 Accounts'}</span>
+                    <span>{language === 'sw' ? 'Akaunti Zilizosajiliwa' : 'Connected Accounts'}</span>
                   </button>
                 </>
               ) : (
@@ -365,32 +366,32 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
           </div>
         </div>
 
-        {/* CARD 3: Multi-Account Switcher */}
+        {/* CARD 3: Google Cloud Firestore Database */}
         <div 
           onClick={() => handleProtectedAction(onOpenAccountSwitcher)}
           className="group relative rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/60 p-6 space-y-4 shadow-xl transition-all cursor-pointer hover:-translate-y-1"
         >
           <div className="w-12 h-12 rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-500/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Users className="w-6 h-6" />
+            <Database className="w-6 h-6" />
           </div>
           <div>
             <span className="text-[10px] font-mono text-sky-400 uppercase font-bold tracking-wider">
-              Majaribio ya Haraka
+              Google Cloud Firestore
             </span>
             <h3 className="text-lg font-bold text-white mt-1 group-hover:text-sky-300 transition-colors">
-              {language === 'sw' ? 'Akaunti Nyingi za Kujaribu' : 'Multi-Account Switcher'}
+              {language === 'sw' ? 'Hifadhidata ya Firebase Live' : 'Live Firebase Cloud Database'}
             </h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
               {language === 'sw'
-                ? 'Badili mara moja kati ya akaunti 5 za Tanzania (M-Pesa, Airtel, Tigo, CRDB, NMB) zenye masalio na sura tofauti.'
-                : 'Instantly toggle between 5 distinct Tanzanian demo personas with unique balances, faces, and networks.'}
+                ? 'Data zote za watumiaji, pochi, na miamala zimeunganishwa moja kwa moja kwenye Google Firebase Console (Cloud Firestore).'
+                : 'All user profiles, multi-rail wallets, and TIPS transaction records are synchronized live to Google Cloud Firestore.'}
             </p>
           </div>
           <div className="pt-2 flex items-center gap-1.5 text-xs font-bold text-sky-400">
             <span>
               {isAuthenticated
-                ? (language === 'sw' ? 'Badili Akaunti Sasa' : 'Select Demo Account')
-                : (language === 'sw' ? 'Ingia au Chagua Akaunti' : 'Log in to Select Account')}
+                ? (language === 'sw' ? 'Akaunti Zilizopo Mfomoni' : 'View Connected Accounts')
+                : (language === 'sw' ? 'Ingia au Jisajili Kuanza' : 'Sign In or Register to Start')}
             </span>
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
