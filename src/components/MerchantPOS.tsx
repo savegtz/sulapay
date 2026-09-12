@@ -646,7 +646,7 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
 
                 <div className="text-right font-mono">
                   <span className="text-sm font-bold text-emerald-400">+{formatTZS(tx.amount)}</span>
-                  <span className="block text-[10px] text-slate-400">{tx.paymentRail.replace('_', ' ')}</span>
+                  <span className="block text-[10px] text-slate-400">{(tx.paymentRail || 'M_PESA').replace('_', ' ')}</span>
                 </div>
               </div>
             ))}

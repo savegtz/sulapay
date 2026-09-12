@@ -1,4 +1,5 @@
 export type Language = 'sw' | 'en';
+export type ThemeMode = 'light' | 'dark';
 
 export type UserRole = 'LANDING' | 'CUSTOMER' | 'MERCHANT' | 'ARCHITECT';
 

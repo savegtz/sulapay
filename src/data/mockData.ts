@@ -2,14 +2,14 @@ import { Merchant, PaymentProviderStatus, PaymentRail, Transaction, UserProfile,
 
 export const INITIAL_USER: UserProfile = {
   id: 'usr_tz_9821a',
-  fullName: 'Juma Selemani Mkwawa',
-  phoneNumber: '+255 754 819 203',
+  fullName: 'Riko Sapto',
+  phoneNumber: '+62 899-1234-6789',
   nationalIdNida: '19920815-14102-00003-24',
-  email: 'juma.mkwawa@gmail.com',
+  email: 'riko.sapto@gmail.com',
   isBiometricEnrolled: true,
   biometricEnrolledAt: '2026-03-01T10:15:00Z',
   faceTemplateHash: 'sha256_e8f23b98c41d8e12a45bc839d201cba6',
-  faceAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+  faceAvatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80',
   securitySettings: {
     maxLimitWithoutPin: 100000, // 100,000 TZS can be paid with Face-only; higher requires 4-digit PIN
     livenessSensitivity: 'HIGH',

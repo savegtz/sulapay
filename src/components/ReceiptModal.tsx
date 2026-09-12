@@ -122,12 +122,12 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
         y += 7.5;
       };
 
-      addLine('Nambari ya Risiti:', transaction.referenceNumber, true);
-      addLine('Ref ya TIPS / MNO:', transaction.externalProviderRef);
-      addLine('Mfanyabiashara:', transaction.merchantName.slice(0, 22), true);
-      addLine('Lipa Namba (Till):', transaction.merchantLipaNumber, true);
-      addLine('Mlipaji (Customer):', transaction.userName.slice(0, 22));
-      addLine('Mtandao wa Malipo:', transaction.paymentRail.replace('_', ' '));
+      addLine('Nambari ya Risiti:', transaction.referenceNumber || '', true);
+      addLine('Ref ya TIPS / MNO:', transaction.externalProviderRef || '');
+      addLine('Mfanyabiashara:', (transaction.merchantName || '').slice(0, 22), true);
+      addLine('Lipa Namba (Till):', transaction.merchantLipaNumber || '', true);
+      addLine('Mlipaji (Customer):', (transaction.userName || '').slice(0, 22));
+      addLine('Mtandao wa Malipo:', (transaction.paymentRail || 'M_PESA').replace('_', ' '));
       addLine('Uhakiki wa Uso:', `${transaction.verificationMode} (99%)`);
       addLine('Tarehe na Saa:', formatDate(transaction.timestamp).slice(0, 19));
       addLine('Gharama ya TIPS:', 'TZS 0.00 (BURE)', true);
@@ -287,7 +287,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
           <div className="flex justify-between py-1.5 border-b border-slate-800">
             <span className="text-slate-400">{t.payment.settlementRail}</span>
-            <span className="text-slate-200">{transaction.paymentRail.replace('_', ' ')}</span>
+            <span className="text-slate-200">{(transaction.paymentRail || 'M_PESA').replace('_', ' ')}</span>
           </div>
 
           <div className="flex justify-between py-1.5 border-b border-slate-800">

@@ -47,7 +47,7 @@ export const apiClient = {
       fullName: data.fullName,
       phoneNumber: data.phoneNumber,
       nationalIdNida: data.nationalIdNida,
-      email: `${data.phoneNumber.replace(/\D/g, '')}@facepay.tz`,
+      email: `${(data.phoneNumber || '').replace(/\D/g, '') || 'user'}@facepay.tz`,
       faceAvatarUrl: data.faceAvatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
       isBiometricEnrolled: true,
       biometricEnrolledAt: new Date().toISOString(),

@@ -96,38 +96,38 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
   };
 
   return (
-    <div className="space-y-16 pb-16">
+    <div className="space-y-8 sm:space-y-16 pb-12 sm:pb-16">
       {/* HERO SECTION WITH INTERACTIVE 3D PERSPECTIVE CANVAS */}
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border border-slate-800/80 p-6 sm:p-10 lg:p-14 shadow-2xl shadow-emerald-950/30">
+      <section className="relative overflow-hidden rounded-3xl sm:rounded-[2.5rem] bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border border-slate-800/80 p-4 sm:p-8 lg:p-12 shadow-2xl shadow-emerald-950/30">
         {/* Ambient 3D Glow Orbs */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/2 -right-32 w-96 h-96 bg-sky-500/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-24 left-1/3 w-80 h-80 bg-amber-500/10 rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute -top-32 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-emerald-500/15 rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute top-1/2 -right-32 w-72 sm:w-96 h-72 sm:h-96 bg-sky-500/15 rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute -bottom-24 left-1/3 w-64 sm:w-80 h-64 sm:h-80 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none" />
 
-        {/* Top Tagline Pill */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-600/50 text-emerald-300 text-xs font-semibold shadow-inner">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+        {/* Top Tagline Pill - Mobile Optimized (Compact single row) */}
+        <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-6">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-600/50 text-emerald-300 text-[11px] sm:text-xs font-semibold shadow-inner">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0 animate-pulse" />
             <span>{language === 'sw' ? 'Mapinduzi ya Malipo Tanzania' : 'Next-Gen Fintech for Tanzania'}</span>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-[11px] font-mono">
-            <Lock className="w-3 h-3 text-emerald-400" />
+          <div className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-[11px] font-mono">
+            <Lock className="w-3 h-3 text-emerald-400 shrink-0" />
             <span>Bank of Tanzania TIPS Switch v2.4</span>
           </div>
 
           {!isAuthenticated && (
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[11px] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-              <span>{language === 'sw' ? 'Hali: Hujaingia (Ingia au Jisajili kuanza)' : 'Status: Guest (Login to access services)'}</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-950/60 border border-amber-600/40 text-amber-300 text-[10.5px] sm:text-[11px] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping shrink-0" />
+              <span>{language === 'sw' ? 'Mgeni' : 'Guest'}</span>
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
           {/* Hero Left Copy */}
-          <div className="lg:col-span-7 space-y-6">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1]">
+          <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+            <h1 className="text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.15] sm:leading-[1.1]">
               {language === 'sw' ? (
                 <>
                   Lipa Popote kwa <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400">Sura Yako</span> Pekee.
@@ -139,20 +139,20 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
               )}
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed max-w-xl">
               {language === 'sw'
                 ? 'Mfumo wa kwanza wa kielektroniki unaounganisha M-Pesa, Tigo Pesa, Airtel Money, CRDB na NMB kwa utambuzi wa uso, QR ya nje ya mtandao (Offline QR) na Soundbox ya sauti ya maduka.'
                 : 'Tanzania’s unified biometric & interoperable TIPS switch connecting mobile money (M-Pesa, Tigo, Airtel) and banks (CRDB, NMB) with offline QR vouchers and real-time audio soundbox.'}
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
+            {/* CTA Buttons - Full-width on mobile phones for easy thumb tapping */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 pt-1 sm:pt-2">
               {isAuthenticated ? (
                 <>
                   <button
                     id="hero-try-facepay-btn"
                     onClick={onOpenFacePay}
-                    className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-emerald-500/25 flex items-center gap-2 active:scale-98 transition-all"
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 active:scale-98 transition-all"
                   >
                     <ScanFace className="w-5 h-5 text-slate-950" />
                     <span>{language === 'sw' ? 'Jaribu Malipo ya Uso Sasa' : 'Launch FacePay Checkout'}</span>
@@ -162,7 +162,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
                   <button
                     id="hero-offline-qr-btn"
                     onClick={onOpenOfflineQR}
-                    className="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 flex items-center gap-2 transition-colors"
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 flex items-center justify-center gap-2 transition-colors"
                   >
                     <WifiOff className="w-4 h-4 text-emerald-400" />
                     <span>{language === 'sw' ? 'Malipo Nje ya Mtandao (Offline QR)' : 'Offline QR Payments'}</span>
@@ -171,7 +171,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
                   <button
                     id="hero-switch-account-btn"
                     onClick={onOpenAccountSwitcher}
-                    className="px-4 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs border border-slate-800 flex items-center gap-2 transition-colors"
+                    className="w-full sm:w-auto px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs border border-slate-800 flex items-center justify-center gap-2 transition-colors"
                   >
                     <Users className="w-4 h-4 text-sky-400" />
                     <span>{language === 'sw' ? 'Akaunti Zilizosajiliwa' : 'Connected Accounts'}</span>
@@ -183,7 +183,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
                   <button
                     id="hero-login-action-btn"
                     onClick={onOpenLogin}
-                    className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-emerald-500/25 flex items-center gap-2 active:scale-98 transition-all"
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 active:scale-98 transition-all"
                   >
                     <LogIn className="w-5 h-5 text-slate-950" />
                     <span>{language === 'sw' ? 'Ingia ili Kulipa kwa Uso' : 'Log In to Pay with Face'}</span>
@@ -193,7 +193,7 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
                   <button
                     id="hero-register-action-btn"
                     onClick={onOpenRegister}
-                    className="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-emerald-700/60 flex items-center gap-2 transition-colors"
+                    className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-emerald-700/60 flex items-center justify-center gap-2 transition-colors"
                   >
                     <UserPlus className="w-4 h-4 text-emerald-400" />
                     <span>{language === 'sw' ? 'Fungua Akaunti / Jisajili' : 'Register New Account'}</span>
@@ -203,14 +203,14 @@ export const ModernLandingPage: React.FC<ModernLandingPageProps> = ({
             </div>
 
             {/* Tanzanian Rails Acceptance Badges */}
-            <div className="pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-              <span className="font-semibold text-slate-300">Inasaidia:</span>
-              <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
-                <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Vodacom M-Pesa</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Tigo Pesa</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">Airtel Money</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">CRDB</span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">NMB</span>
+            <div className="pt-3 sm:pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              <span className="font-semibold text-slate-300 text-[11px] sm:text-xs">Inasaidia:</span>
+              <div className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] sm:text-[11px] text-slate-300">
+                <span className="px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700">M-Pesa</span>
+                <span className="px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700">Tigo Pesa</span>
+                <span className="px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700">Airtel</span>
+                <span className="px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700">CRDB</span>
+                <span className="px-2 py-0.5 rounded bg-slate-800/90 border border-slate-700">NMB</span>
               </div>
             </div>
           </div>

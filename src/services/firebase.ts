@@ -127,7 +127,7 @@ export const firebaseService = {
 
   async getUserByPhone(phone: string, pin: string): Promise<{ user: UserProfile; wallet: Wallet } | null> {
     try {
-      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+      const cleanPhone = (phone || '').replace(/[\s\-\(\)]/g, '');
       const q = query(collection(firestore, 'users'), where('phoneNumber', '==', phone));
       const snap = await getDocs(q);
 
@@ -163,7 +163,7 @@ export const firebaseService = {
           currency: 'TZS',
           balance: 345000,
           linkedRail: userData.linkedRail || 'M_PESA',
-          linkedAccountNumber: userData.phoneNumber,
+          linkedAccountNumber: userData.phoneNumber || '+255 754 000 000',
           updatedAt: new Date().toISOString()
         };
         await setDoc(doc(firestore, 'wallets', walletData.id), walletData);
@@ -172,10 +172,10 @@ export const firebaseService = {
       return {
         user: {
           id: userData.id,
-          fullName: userData.fullName,
-          phoneNumber: userData.phoneNumber,
-          nationalIdNida: userData.nationalIdNida,
-          email: userData.email || `${userData.phoneNumber.replace(/\D/g, '')}@facepay.tz`,
+          fullName: userData.fullName || 'Mtumiaji',
+          phoneNumber: userData.phoneNumber || '',
+          nationalIdNida: userData.nationalIdNida || '',
+          email: userData.email || `${(userData.phoneNumber || '').replace(/\D/g, '') || 'user'}@facepay.tz`,
           faceAvatarUrl: userData.faceAvatarUrl,
           isBiometricEnrolled: userData.isBiometricEnrolled ?? true,
           biometricEnrolledAt: userData.biometricEnrolledAt,

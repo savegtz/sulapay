@@ -2,7 +2,7 @@ export const translations = {
   sw: {
     brandName: "FACEPAY TZ",
     tagline: "Lipa kwa uso. Salama, haraka, rahisi.",
-    demoBanner: "HALI YA MAJARIBIO (SANDBOX) — Hakuna pesa halisi inayokatwa. Inatumia mazingira salama ya TIPS/BOT.",
+    demoBanner: "Google Cloud Firestore Imeunganishwa • Benki Kuu ya Tanzania (BoT) TIPS Switch v2.4",
     nav: {
       landing: "Nyumbani (3D)",
       customer: "Mtumiaji (Customer)",
@@ -114,7 +114,7 @@ export const translations = {
   en: {
     brandName: "FACEPAY TZ",
     tagline: "Pay with your face. Safe, fast, simple.",
-    demoBanner: "SANDBOX MODE — No real money is debited. Simulated on Tanzania TIPS / BOT settlement testbed.",
+    demoBanner: "Google Cloud Firestore Live • Bank of Tanzania (BoT) TIPS Switch v2.4",
     nav: {
       landing: "3D Home",
       customer: "Customer App",

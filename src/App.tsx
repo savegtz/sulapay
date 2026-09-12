@@ -12,9 +12,11 @@ import { QRPaymentModal } from './components/QRPaymentModal';
 import { OfflineQRPaymentModal } from './components/OfflineQRPaymentModal';
 import { AccountSwitcherModal } from './components/AccountSwitcherModal';
 import { ModernLandingPage } from './components/ModernLandingPage';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { 
   Language, 
   Merchant, 
+  ThemeMode,
   Transaction, 
   UserProfile, 
   UserRole, 
@@ -33,6 +35,28 @@ import { Shield, Sparkles } from 'lucide-react';
 export default function App() {
   const [currentRole, setCurrentRole] = useState<UserRole>('LANDING');
   const [language, setLanguage] = useState<Language>('sw');
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('facepay_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    }
+    return 'dark';
+  });
+
+  // Sync dark class on html root for Tailwind and background styling
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('facepay_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
   
   // Authentication State (Gated: Guests cannot view internal portals until logged in or registered)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -158,7 +182,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 selection:bg-emerald-500 selection:text-slate-950 ${
+      theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
+    }`}>
       {/* Header with Role Navigation, Language Toggle, and TIPS Status */}
       <Header
         currentRole={currentRole}
@@ -171,6 +197,8 @@ export default function App() {
         }}
         language={language}
         onToggleLanguage={handleToggleLanguage}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         isAuthenticated={isAuthenticated}
         onOpenLogin={handleOpenLogin}
         onOpenRegister={handleOpenRegister}
@@ -189,12 +217,14 @@ export default function App() {
           }
           setIsOfflineQROpen(true);
         }}
-        activeUserName={user?.fullName || 'Juma Mkwawa'}
+        activeUserName={user?.fullName || 'Riko Sapto'}
         activeRail={wallet?.linkedRail || 'M_PESA'}
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-12">
+      <main className={`flex-1 max-w-7xl w-full mx-auto ${
+        isAuthenticated && currentRole === 'CUSTOMER' ? 'px-0 sm:px-6 pt-0 sm:pt-6' : 'px-3.5 sm:px-6 pt-4 sm:pt-6'
+      } pb-24 md:pb-12`}>
         {/* If user is not authenticated, they can only see the Landing Page */}
         {(!isAuthenticated || currentRole === 'LANDING') && (
           <ModernLandingPage
@@ -242,6 +272,7 @@ export default function App() {
             transactions={transactions}
             merchants={merchants}
             language={language}
+            theme={theme}
             onInitiatePayment={handleInitiatePayment}
             onOpenTopUp={() => setIsTopUpModalOpen(true)}
             onOpenEnrollment={() => setIsEnrollmentModalOpen(true)}
@@ -250,6 +281,7 @@ export default function App() {
             onOpenAccountSwitcher={() => setIsAccountSwitcherOpen(true)}
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onSelectTransaction={(tx) => setReceiptTx(tx)}
+            onToggleLanguage={handleToggleLanguage}
           />
         )}
 
@@ -333,11 +365,13 @@ export default function App() {
           setUser(account.user);
           setWallet(account.wallet);
           setIsAuthenticated(true);
+          setCurrentRole('CUSTOMER');
         }}
         onSelectPersona={(persona) => {
           setUser(persona.user);
           setWallet(persona.wallet);
           setIsAuthenticated(true);
+          setCurrentRole('CUSTOMER');
         }}
       />
 
@@ -353,6 +387,7 @@ export default function App() {
           setUser(updatedUser);
           setWallet(updatedWallet);
           setIsAuthenticated(true);
+          setCurrentRole('CUSTOMER');
           setIsAuthModalOpen(false);
         }}
       />
@@ -365,7 +400,9 @@ export default function App() {
       />
 
       {/* Tanzanian Flag Accent Ribbon & Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 text-slate-400 py-6 px-4">
+      <footer className={`border-t py-6 px-4 transition-colors duration-200 ${
+        theme === 'dark' ? 'border-slate-900 bg-slate-950 text-slate-400' : 'border-slate-200 bg-white text-slate-600'
+      }`}>
         {/* Tanzanian Flag Colored Stripe: Green, Yellow, Black, Yellow, Blue */}
         <div className="h-1.5 w-full flex mb-5 rounded-full overflow-hidden max-w-md mx-auto opacity-80">
           <div className="flex-1 bg-emerald-500" />
@@ -377,23 +414,52 @@ export default function App() {
 
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-center sm:text-left">
           <div className="space-y-1">
-            <div className="flex items-center justify-center sm:justify-start gap-1.5 font-bold text-slate-300">
-              <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            <div className={`flex items-center justify-center sm:justify-start gap-1.5 font-bold ${
+              theme === 'dark' ? 'text-slate-300' : 'text-slate-800'
+            }`}>
+              <Shield className="w-3.5 h-3.5 text-emerald-500" />
               <span>FACEPAY TZ • Bank of Tanzania (BOT) TIPS Compliance</span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className={`text-[11px] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
               {language === 'sw' 
                 ? 'Salama, haraka, rahisi. Malipo ya kielektroniki kwa utambuzi wa sura (Tanzania Instant Payment System).'
                 : 'Safe, fast, simple. Biometric electronic payments via Tanzania Instant Payment System.'}
             </p>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+          <div className={`flex items-center gap-4 text-[11px] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
             <span>M-Pesa • Tigo Pesa • Airtel • CRDB • NMB</span>
-            <span>v2.4 Sandbox</span>
+            <span className="text-emerald-500 font-mono font-semibold">BoT TIPS v2.4 Live</span>
           </div>
         </div>
       </footer>
+
+      {/* Mobile-First Floating Thumb Bottom Navigation */}
+      <MobileBottomNav
+        currentRole={currentRole}
+        onSelectRole={(role) => {
+          if (!isAuthenticated && role !== 'LANDING') {
+            handleOpenLogin();
+            return;
+          }
+          setCurrentRole(role);
+        }}
+        language={language}
+        isAuthenticated={isAuthenticated}
+        theme={theme}
+        onOpenLogin={handleOpenLogin}
+        onOpenRegister={handleOpenRegister}
+        onOpenSettings={() => {
+          setIsAccountSwitcherOpen(true);
+        }}
+        onOpenFacePay={() => {
+          if (!isAuthenticated) {
+            handleOpenLogin();
+            return;
+          }
+          handleInitiatePayment();
+        }}
+      />
     </div>
   );
 }

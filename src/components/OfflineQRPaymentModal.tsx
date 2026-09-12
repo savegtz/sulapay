@@ -204,27 +204,27 @@ export const OfflineQRPaymentModal: React.FC<OfflineQRPaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-emerald-700/50 rounded-3xl shadow-2xl shadow-emerald-950/80 overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-emerald-700/50 rounded-2xl sm:rounded-3xl shadow-2xl shadow-emerald-950/80 overflow-hidden my-auto max-h-[95vh] flex flex-col">
         {/* Top Banner indicating Offline Capability */}
-        <div className="bg-gradient-to-r from-emerald-900/90 via-teal-900/80 to-slate-900 p-4 border-b border-emerald-700/40 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
-              <WifiOff className="w-5 h-5" />
+        <div className="bg-gradient-to-r from-emerald-900/90 via-teal-900/80 to-slate-900 px-3.5 sm:px-4 py-3 sm:py-4 border-b border-emerald-700/40 text-white flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shrink-0">
+              <WifiOff className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold tracking-tight">
-                  {language === 'sw' ? 'Malipo ya Nje ya Mtandao (Offline QR)' : 'Offline QR Payments'}
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h3 className="text-xs sm:text-sm font-bold tracking-tight">
+                  {language === 'sw' ? 'Malipo Nje ya Mtandao' : 'Offline QR Payments'}
                 </h3>
-                <span className="text-[10px] bg-emerald-400/20 text-emerald-300 font-mono px-2 py-0.5 rounded border border-emerald-400/40">
-                  NO INTERNET NEEDED
+                <span className="text-[9.5px] sm:text-[10px] bg-emerald-400/20 text-emerald-300 font-mono px-1.5 py-0.2 rounded border border-emerald-400/40">
+                  OFFLINE
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300">
+              <p className="text-[10.5px] sm:text-[11px] text-slate-300 line-clamp-1 sm:line-clamp-none">
                 {language === 'sw' 
-                  ? 'Lipa hata bila bando, mtandao ukikatika au ukiwa vijijini' 
-                  : 'Pay seamlessly without mobile data or cellular network connection'}
+                  ? 'Lipa hata bila bando au intaneti' 
+                  : 'Pay without mobile data or network'}
               </p>
             </div>
           </div>
@@ -232,50 +232,50 @@ export const OfflineQRPaymentModal: React.FC<OfflineQRPaymentModalProps> = ({
           <button
             id="close-offline-modal-btn"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 p-2 gap-2 text-xs">
+        <div className="flex border-b border-slate-800 bg-slate-950/60 p-1.5 sm:p-2 gap-1.5 text-xs shrink-0">
           <button
             onClick={() => setActiveTab('GENERATE_VOUCHER')}
-            className={`flex-1 py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-1.5 sm:py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all text-[11px] sm:text-xs ${
               activeTab === 'GENERATE_VOUCHER'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <QrCode className="w-3.5 h-3.5" />
-            <span>{language === 'sw' ? 'Vocha ya QR ya Nje' : 'My Offline Voucher'}</span>
+            <QrCode className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'sw' ? 'Vocha ya Nje' : 'My Voucher'}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('OFFLINE_SCAN')}
-            className={`flex-1 py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-1.5 sm:py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all text-[11px] sm:text-xs ${
               activeTab === 'OFFLINE_SCAN'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>{language === 'sw' ? 'Jaribu Kulipa Dukani' : 'Test Store Pay'}</span>
+            <Smartphone className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'sw' ? 'Pima Dukani' : 'Test Pay'}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('SYNC_QUEUE')}
-            className={`flex-1 py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all relative ${
+            className={`flex-1 py-1.5 sm:py-2 rounded-xl font-semibold flex items-center justify-center gap-1.5 transition-all relative text-[11px] sm:text-xs ${
               activeTab === 'SYNC_QUEUE'
                 ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>{language === 'sw' ? 'Foleni ya Kusawazisha' : 'Sync Queue'}</span>
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'sw' ? 'Sawazisha' : 'Sync'}</span>
             {offlineQueue.length > 0 && (
-              <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[10px] font-bold flex items-center justify-center ml-1">
+              <span className="w-4 h-4 rounded-full bg-amber-500 text-slate-950 text-[10px] font-bold flex items-center justify-center ml-1 shrink-0">
                 {offlineQueue.length}
               </span>
             )}

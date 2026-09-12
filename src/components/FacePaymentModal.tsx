@@ -250,20 +250,20 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-emerald-800/40 rounded-3xl shadow-2xl shadow-emerald-950/80 overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-emerald-800/40 rounded-2xl sm:rounded-3xl shadow-2xl shadow-emerald-950/80 overflow-hidden my-auto max-h-[95vh] flex flex-col">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <ScanFace className="w-5 h-5" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-800 bg-slate-950/60 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+              <ScanFace className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
-                {language === 'sw' ? 'Lipa kwa Uso (FacePay Authorization)' : 'FacePay Authorization'}
+              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                {language === 'sw' ? 'Lipa kwa Uso (FacePay)' : 'FacePay Authorization'}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-slate-400">
                 {t.tagline}
               </p>
             </div>
@@ -285,7 +285,7 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
         <canvas ref={canvasRef} className="hidden" />
 
         {/* Content Body */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto">
           {errorMessage && (
             <div className="mb-4 p-3 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-200 text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
@@ -295,13 +295,13 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
 
           {/* STEP 1: PAYMENT DETAILS */}
           {step === 'DETAILS' && (
-            <div className="space-y-5">
-              {/* Sandbox info badge */}
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
-                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-4 sm:space-y-5">
+              {/* Live TIPS info badge */}
+              <div className="flex items-start gap-2.5 p-2.5 sm:p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs">
+                <Info className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold block">TIPS Sandbox Mode Active</span>
-                  <span>{t.demoBanner}</span>
+                  <span className="font-bold block">Bank of Tanzania TIPS Switch Live</span>
+                  <span className="text-[11px]">{t.demoBanner}</span>
                 </div>
               </div>
 

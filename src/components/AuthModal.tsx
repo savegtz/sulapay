@@ -155,21 +155,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-emerald-700/40 rounded-3xl shadow-2xl shadow-emerald-950/80 overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-emerald-700/40 rounded-2xl sm:rounded-3xl shadow-2xl shadow-emerald-950/80 overflow-hidden my-auto max-h-[95vh] flex flex-col">
         
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/70">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <UserCheck className="w-5 h-5" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-800 bg-slate-950/70 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+              <UserCheck className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">
+              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
                 {language === 'sw' ? 'Akaunti ya FacePay TZ' : 'FacePay TZ Account'}
               </h3>
-              <p className="text-xs text-slate-400">
-                {language === 'sw' ? 'Mifumo ya Kitambulisho cha Taifa (NIDA) & TIPS' : 'National ID (NIDA) & TIPS Integrated'}
+              <p className="text-[11px] sm:text-xs text-slate-400">
+                {language === 'sw' ? 'Mifumo ya NIDA & TIPS Imeunganishwa' : 'National ID (NIDA) & TIPS Integrated'}
               </p>
             </div>
           </div>
@@ -184,7 +184,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Tab switcher */}
-        <div className="flex border-b border-slate-800 bg-slate-950/40 p-1.5 gap-1.5">
+        <div className="flex border-b border-slate-800 bg-slate-950/40 p-1.5 gap-1.5 shrink-0">
           <button
             id="tab-login-btn"
             type="button"
@@ -195,7 +195,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
-            {language === 'sw' ? 'Ingia (Login)' : 'Sign In'}
+            {language === 'sw' ? 'Ingia' : 'Sign In'}
           </button>
 
           <button
@@ -223,13 +223,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
               }`}
             >
-              {language === 'sw' ? 'Badili Mtumiaji' : 'Switch Demo'}
+              {language === 'sw' ? 'Badili Akaunti' : 'Switch Account'}
             </button>
           )}
         </div>
 
         {/* Body content */}
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
           {errorMsg && (
             <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />

@@ -30,8 +30,8 @@ export function formatDate(dateString: string): string {
 /**
  * Masks a phone number for security, e.g. +255 754 123 456 -> +255 754 *** 456
  */
-export function maskPhoneNumber(phone: string): string {
-  if (!phone || phone.length < 9) return phone;
+export function maskPhoneNumber(phone?: string | null): string {
+  if (!phone || typeof phone !== 'string' || phone.length < 9) return phone || '';
   const cleaned = phone.replace(/\s+/g, '');
   return `${cleaned.slice(0, 7)} *** ${cleaned.slice(-3)}`;
 }
