@@ -139,6 +139,20 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
     };
   }, []);
 
+  // Connect camera stream to video whenever cameraStream or step changes
+  useEffect(() => {
+    if (cameraStream && videoRef.current && !isSimulatedCamera) {
+      const video = videoRef.current;
+      if (video.srcObject !== cameraStream) {
+        video.srcObject = cameraStream;
+      }
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((e) => console.warn('Payment camera video play caught:', e));
+      }
+    }
+  }, [cameraStream, step, isSimulatedCamera]);
+
   const stopCamera = () => {
     if (cameraStream) {
       cameraStream.getTracks().forEach(track => track.stop());
@@ -151,6 +165,9 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
     setErrorMessage(null);
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+        }
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
         });
@@ -158,12 +175,13 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
         setIsSimulatedCamera(false);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(e => console.warn('Payment direct play caught:', e));
         }
       } else {
         throw new Error('Webcam not supported in this browser environment');
       }
     } catch (err: any) {
-      console.warn('Camera access unavailable, activating simulated high-resolution camera feed:', err);
+      console.warn('Camera access unavailable or denied, activating simulated high-resolution camera feed:', err);
       setIsSimulatedCamera(true);
       setCameraError(null);
     }

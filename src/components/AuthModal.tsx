@@ -63,6 +63,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Biometric Face Enrollment state in registration
   const [enrollFaceMode, setEnrollFaceMode] = useState<'CAMERA' | 'UPLOAD' | 'NONE'>('CAMERA');
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isSimulatedCamera, setIsSimulatedCamera] = useState<boolean>(false);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [capturedFaceUrl, setCapturedFaceUrl] = useState<string | null>(null);
   const [faceEnrolledSuccess, setFaceEnrolledSuccess] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -97,6 +99,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   }, [isOpen, initialTab, currentUser, isAuthenticated]);
 
+  // Connect camera stream to video whenever isCameraActive or streamRef changes
+  useEffect(() => {
+    if (isCameraActive && !isSimulatedCamera && videoRef.current && streamRef.current) {
+      const video = videoRef.current;
+      if (video.srcObject !== streamRef.current) {
+        video.srcObject = streamRef.current;
+      }
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((e) => console.warn('Video play in effect caught:', e));
+      }
+    }
+  }, [isCameraActive, isSimulatedCamera]);
+
   const loadDemoAccounts = async () => {
     try {
       const res = await apiClient.getDemoUsers();
@@ -107,25 +123,71 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // Camera Management for Face Registration
-  const startCamera = async () => {
+  const startCamera = async (overrideFacing?: 'user' | 'environment') => {
     setCameraError(null);
+    const targetFacing = overrideFacing || facingMode;
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // Stop any active stream first
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+          video: { 
+            facingMode: targetFacing, 
+            width: { ideal: 640 }, 
+            height: { ideal: 480 } 
+          }
         });
         streamRef.current = stream;
+        setIsSimulatedCamera(false);
         setIsCameraActive(true);
+        setCameraError(null);
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(e => console.warn('Direct video play caught:', e));
         }
       } else {
         throw new Error('Camera access not supported in this browser');
       }
     } catch (err: any) {
-      console.warn('Camera failed:', err);
-      setCameraError('Haikuweza kuwasha kamera. Unaweza kupakia picha au kuchagua picha ya majaribio.');
-      setIsCameraActive(false);
+      console.warn('Camera failed or denied, activating simulated camera:', err);
+      let msg = language === 'sw'
+        ? 'Kamera ya kifaa haikupatikana au ruhusa imezuiwa. Tumewasha "Kamera ya Majaribio" (Simulated Face) ili uendelee na usajili bila kukwama.'
+        : 'Camera could not be accessed. Switched to high-resolution simulated face feed.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        msg = language === 'sw'
+          ? 'Ruhusa ya kamera imezuiwa na kivinjari chako (Permission Denied). Tumewasha "Kamera ya Majaribio" ili ukamilishe usajili.'
+          : 'Camera permission denied by browser. Switched to simulated camera.';
+      }
+      setCameraError(msg);
+      // Seamlessly switch to simulated feed so user is NEVER blocked with a black box!
+      setIsSimulatedCamera(true);
+      setIsCameraActive(true);
+    }
+  };
+
+  const toggleFacingMode = async () => {
+    const nextMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(nextMode);
+    if (!isSimulatedCamera) {
+      await startCamera(nextMode);
+    }
+  };
+
+  const toggleSimulatedCamera = async () => {
+    if (isSimulatedCamera) {
+      // Try switching to real webcam
+      await startCamera();
+    } else {
+      // Switch to simulated camera
+      stopCamera();
+      setIsSimulatedCamera(true);
+      setIsCameraActive(true);
+      setCameraError(null);
     }
   };
 
@@ -137,31 +199,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsCameraActive(false);
   };
 
-  // Capture face snapshot from live video
+  // Capture face snapshot from live video or simulated face
   const handleCaptureFace = () => {
-    if (videoRef.current && canvasRef.current) {
+    if (isCameraActive && !isSimulatedCamera && videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       canvas.width = video.videoWidth || 480;
       canvas.height = video.videoHeight || 360;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Handle mirror flip for realistic photo
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
+        if (facingMode === 'user') {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        }
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         setCapturedFaceUrl(dataUrl);
         setFaceEnrolledSuccess(true);
         stopCamera();
+        return;
       }
-    } else {
-      // Fallback sample face
-      const sampleFace = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
-      setCapturedFaceUrl(sampleFace);
-      setFaceEnrolledSuccess(true);
-      stopCamera();
     }
+
+    // High quality fallback / simulated face
+    const sampleFace = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80';
+    setCapturedFaceUrl(sampleFace);
+    setFaceEnrolledSuccess(true);
+    stopCamera();
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -478,23 +542,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <div className="relative mx-auto w-full max-w-[280px] h-52 sm:h-60 rounded-2xl overflow-hidden bg-slate-900 border-2 border-slate-700 flex items-center justify-center">
                       {isCameraActive ? (
                         <>
-                          <video
-                            ref={videoRef}
-                            autoPlay
-                            playsInline
-                            muted
-                            className="absolute inset-0 w-full h-full object-cover transform -scale-x-100"
-                          />
+                          {!isSimulatedCamera ? (
+                            <video
+                              ref={videoRef}
+                              autoPlay
+                              playsInline
+                              muted
+                              className={`absolute inset-0 w-full h-full object-cover ${facingMode === 'user' ? 'transform -scale-x-100' : ''}`}
+                            />
+                          ) : (
+                            <div className="absolute inset-0 w-full h-full overflow-hidden bg-slate-950">
+                              <img
+                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80"
+                                alt="Simulated Face Feed"
+                                className="w-full h-full object-cover filter contrast-105"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="absolute top-2 right-2 bg-amber-500/90 text-slate-950 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shadow">
+                                {language === 'sw' ? 'Majaribio (Demo)' : 'Simulated'}
+                              </div>
+                            </div>
+                          )}
+
                           <FaceMeshOverlay
                             status="SCANNING"
                             showBoundingBox={true}
                             showScanLine={true}
                             showLandmarkNodes={true}
                             showWireframe={true}
-                            videoRef={videoRef}
-                            isMirrored={true}
+                            videoRef={!isSimulatedCamera ? videoRef : undefined}
+                            isMirrored={facingMode === 'user'}
                             enablePoseControls={false}
                           />
+
                           <div className="absolute top-2 left-2 bg-slate-950/80 px-2 py-0.5 rounded text-[9px] font-mono text-emerald-400 border border-emerald-500/30">
                             3D TRACKER ACTIVE
                           </div>
@@ -505,20 +585,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           <p className="text-xs text-slate-400 mb-3">
                             {language === 'sw' ? 'Washa kamera kuskani uso kwa moja kwa moja' : 'Activate camera to scan face live'}
                           </p>
-                          <button
-                            type="button"
-                            onClick={startCamera}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md"
-                          >
-                            <Camera className="w-3.5 h-3.5" />
-                            <span>{language === 'sw' ? 'Washa Kamera' : 'Turn On Camera'}</span>
-                          </button>
+                          <div className="flex flex-wrap items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => startCamera()}
+                              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md"
+                            >
+                              <Camera className="w-3.5 h-3.5" />
+                              <span>{language === 'sw' ? 'Washa Kamera Halisi' : 'Turn On Webcam'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={toggleSimulatedCamera}
+                              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold text-xs transition-all border border-slate-700"
+                            >
+                              {language === 'sw' ? 'Kamera ya Majaribio' : 'Demo Camera'}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Camera Capture & Upload Buttons */}
-                    <div className="flex items-center justify-center gap-2">
+                    {/* Camera Capture & Controls */}
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                       {isCameraActive && (
                         <button
                           id="capture-face-reg-btn"
@@ -541,10 +630,46 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           className="hidden"
                         />
                       </label>
+
+                      {isCameraActive && (
+                        <button
+                          type="button"
+                          onClick={toggleSimulatedCamera}
+                          className="px-2.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-[11px] text-amber-300 font-medium transition-all border border-slate-700"
+                        >
+                          {isSimulatedCamera ? 'Tumia Kamera Halisi' : 'Tumia Kamera ya Majaribio'}
+                        </button>
+                      )}
+
+                      {isCameraActive && !isSimulatedCamera && (
+                        <button
+                          type="button"
+                          onClick={toggleFacingMode}
+                          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                          title="Geuza Kamera (Front/Back)"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {cameraError && (
-                      <p className="text-[11px] text-amber-400 text-center">{cameraError}</p>
+                      <div className="p-2.5 rounded-xl bg-amber-950/60 border border-amber-800/70 text-amber-300 text-[11px] space-y-1.5">
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <span>Taarifa ya Kamera:</span>
+                        </div>
+                        <p>{cameraError}</p>
+                        {!isSimulatedCamera && (
+                          <button
+                            type="button"
+                            onClick={toggleSimulatedCamera}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-[10px] hover:bg-amber-400"
+                          >
+                            Washa Kamera ya Majaribio (Simulated Face) Sasa
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 ) : (
