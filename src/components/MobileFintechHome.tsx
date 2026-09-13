@@ -32,7 +32,10 @@ import {
   Sparkles as SparklesIcon,
   Tag,
   Search,
-  Bell
+  Bell,
+  WifiOff,
+  Store,
+  Users
 } from 'lucide-react';
 import { Language, Merchant, ThemeMode, Transaction, UserProfile, Wallet } from '../types';
 import { formatTZS, formatDate } from '../utils/formatters';
@@ -42,6 +45,10 @@ import { SpendingAnalyticsModal } from './SpendingAnalyticsModal';
 import { CardsAndBanksModal } from './CardsAndBanksModal';
 import { NotificationsSoundboxModal } from './NotificationsSoundboxModal';
 import { RewardsLoyaltyModal } from './RewardsLoyaltyModal';
+import { OfflineMeshPaymentModal } from './OfflineMeshPaymentModal';
+import { TraReceiptModal } from './TraReceiptModal';
+import { MerchantPosModal } from './MerchantPosModal';
+import { VicobaGroupSavingsModal } from './VicobaGroupSavingsModal';
 
 interface MobileFintechHomeProps {
   user: UserProfile;
@@ -92,6 +99,10 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
   const [isCardsAndBanksOpen, setIsCardsAndBanksOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isRewardsOpen, setIsRewardsOpen] = useState(false);
+  const [isOfflineMeshOpen, setIsOfflineMeshOpen] = useState(false);
+  const [isMerchantPosOpen, setIsMerchantPosOpen] = useState(false);
+  const [isVicobaOpen, setIsVicobaOpen] = useState(false);
+  const [selectedTraTx, setSelectedTraTx] = useState<Transaction | null>(null);
   const isDark = theme === 'dark';
 
   // Quick service bill payment modal
@@ -207,8 +218,29 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
             </div>
           </button>
 
-          {/* Action Icons: Notifications Bell & Rewards Voucher */}
-          <div className="flex items-center gap-2">
+          {/* Action Icons: Offline Mesh, Merchant POS, Notifications Bell & Rewards Voucher */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Offline Mesh Mode Toggle */}
+            <button 
+              id="mobile-offline-mesh-btn"
+              onClick={() => setIsOfflineMeshOpen(true)}
+              title={language === 'sw' ? 'Malipo Bila Mtandao (Offline Mesh)' : 'Offline Mesh Pay'}
+              className="relative p-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-sm border border-emerald-300 dark:border-emerald-800/60 active:scale-95 transition-transform"
+            >
+              <WifiOff className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
+            </button>
+
+            {/* Merchant POS Mode */}
+            <button 
+              id="mobile-merchant-pos-btn"
+              onClick={() => setIsMerchantPosOpen(true)}
+              title={language === 'sw' ? 'Hali ya Muuzaji (POS)' : 'Merchant POS Counter'}
+              className="relative p-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-sm border border-purple-200 dark:border-slate-700 active:scale-95 transition-transform"
+            >
+              <Store className="w-4.5 h-4.5 text-[#543eed] dark:text-purple-400" />
+            </button>
+
             {/* 1. Notifications & Soundbox Bell */}
             <div className="relative">
               <button 
@@ -217,7 +249,7 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
                 title={language === 'sw' ? 'Arifa & Soundbox' : 'Notifications & Soundbox'}
                 className="relative p-2.5 rounded-2xl bg-white/90 dark:bg-slate-800/90 shadow-sm border border-purple-200 dark:border-slate-700 active:scale-95 transition-transform"
               >
-                <Bell className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <Bell className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
               </button>
               {/* Unread badge 4 */}
               <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#543eed] text-white text-[9px] font-black flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-xs animate-pulse">
@@ -235,14 +267,14 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
               >
                 {/* Stylized floating receipt icon with coin badge */}
                 <div className="relative">
-                  <Receipt className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-500 text-slate-950 font-bold text-[8px] flex items-center justify-center border border-white dark:border-slate-900 shadow-xs">
+                  <Receipt className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
+                  <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-amber-500 text-slate-950 font-bold text-[7px] flex items-center justify-center border border-white dark:border-slate-900 shadow-xs">
                     $
                   </span>
                 </div>
               </button>
               {/* Promo badge */}
-              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900" />
             </div>
           </div>
         </div>
@@ -523,31 +555,22 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
             </span>
           </button>
 
-          {/* 5. Donations (Sadaka & Michango) - Exact image style: Golden Coin in Hand */}
+          {/* 5. Vicoba (Vikundi vya Akiba Shirikishi & Escrow) */}
           <button
-            id="service-donations-btn"
-            onClick={() => {
-              handleOpenService(
-                language === 'sw' ? 'Sadaka, Zaka na Michango' : 'Donations & Charity',
-                'CHARITY',
-                <HeartHandshake className="w-6 h-6 text-purple-500" />,
-                'KUSANYO-MSIKITI-01',
-                language === 'sw' ? 'Jina la Taasisi au Namba ya Sadaka' : 'Institution / Charity ID'
-              );
-            }}
+            id="service-vicoba-btn"
+            onClick={() => setIsVicobaOpen(true)}
             className="flex flex-col items-center group active:scale-95 transition-transform"
           >
             <div className="w-14 h-14 rounded-full bg-[#f2e7fe] dark:bg-purple-950/40 text-purple-950 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-              {/* Hand with floating golden coin matching image */}
               <div className="relative flex flex-col items-center justify-center">
-                <div className="w-4 h-4 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 border border-amber-600/30 flex items-center justify-center text-[9px] font-bold text-amber-950 shadow-xs mb-0.5">
-                  $
-                </div>
-                <div className="w-6 h-2 rounded-full bg-[#4a154b] opacity-80" />
+                <Users className="w-7 h-7 text-teal-600 stroke-[2.2]" />
+                <span className="absolute -top-1 -right-1.5 px-1 py-0.2 rounded-full bg-teal-600 text-white text-[8px] font-black">
+                  TIPS
+                </span>
               </div>
             </div>
             <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mt-2 truncate w-full">
-              {language === 'sw' ? 'Sadaka' : 'Donations'}
+              {language === 'sw' ? 'Vicoba' : 'Vicoba'}
             </span>
           </button>
 
@@ -680,13 +703,41 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
               </div>
             </div>
 
-            <div className="text-right">
+            <div className="text-right flex flex-col items-end">
               <span className="text-sm sm:text-base font-bold text-red-500 font-sans block">
                 {currencyMode === 'USD' ? '-$22,99' : '-TZS 59,500'}
               </span>
-              <span className="text-[11px] text-slate-400 font-normal block mt-0.5">
-                12.36 PM
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[11px] text-slate-400 font-normal">
+                  12.36 PM
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTraTx({
+                      id: 'tx-netflix-sub',
+                      userId: user.id,
+                      userName: user.fullName,
+                      merchantId: 'merch-netflix',
+                      merchantName: 'Netflix',
+                      merchantLipaNumber: 'NETFLIX-GLOBAL',
+                      amount: 59500,
+                      status: 'COMPLETED',
+                      paymentRail: 'VISA',
+                      referenceNumber: 'FP-NTFX-9921',
+                      externalProviderRef: 'TIPS-VISA-882190',
+                      verificationMode: 'FACIAL_BIOMETRICS',
+                      faceMatchScore: 99.4,
+                      createdAt: new Date().toISOString()
+                    });
+                  }}
+                  className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition-all"
+                  title="Stakabadhi ya TRA EFD"
+                >
+                  TRA
+                </button>
+              </div>
             </div>
           </div>
 
@@ -736,13 +787,41 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
               </div>
             </div>
 
-            <div className="text-right">
+            <div className="text-right flex flex-col items-end">
               <span className="text-sm sm:text-base font-bold text-red-500 font-sans block">
                 {currencyMode === 'USD' ? '-$15,99' : '-TZS 41,500'}
               </span>
-              <span className="text-[11px] text-slate-400 font-normal block mt-0.5">
-                10.12 AM
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[11px] text-slate-400 font-normal">
+                  10.12 AM
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTraTx({
+                      id: 'tx-spotify-sub',
+                      userId: user.id,
+                      userName: user.fullName,
+                      merchantId: 'merch-spotify',
+                      merchantName: 'Spotify Premium',
+                      merchantLipaNumber: 'SPOTIFY-PREMIUM',
+                      amount: 41500,
+                      status: 'COMPLETED',
+                      paymentRail: 'M_PESA',
+                      referenceNumber: 'FP-SPOT-7712',
+                      externalProviderRef: 'TIPS-M-PESA-449102',
+                      verificationMode: 'FACIAL_BIOMETRICS',
+                      faceMatchScore: 99.6,
+                      createdAt: new Date().toISOString()
+                    });
+                  }}
+                  className="px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition-all"
+                  title="Stakabadhi ya TRA EFD"
+                >
+                  TRA
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1160,6 +1239,44 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
             discount: '15%'
           });
         }}
+      />
+
+      {/* Offline Mesh P2P Bluetooth / BLE Biometric Payments Modal */}
+      <OfflineMeshPaymentModal
+        isOpen={isOfflineMeshOpen}
+        onClose={() => setIsOfflineMeshOpen(false)}
+        language={language}
+        theme={theme}
+        user={user}
+        wallet={wallet}
+      />
+
+      {/* TRA Electronic Fiscal Device (EFD) Digital Tax Receipt Modal */}
+      <TraReceiptModal
+        isOpen={!!selectedTraTx}
+        onClose={() => setSelectedTraTx(null)}
+        language={language}
+        theme={theme}
+        transaction={selectedTraTx}
+      />
+
+      {/* Merchant POS Counter Mode Modal */}
+      <MerchantPosModal
+        isOpen={isMerchantPosOpen}
+        onClose={() => setIsMerchantPosOpen(false)}
+        language={language}
+        theme={theme}
+        user={user}
+      />
+
+      {/* Vicoba & Community Group Savings Modal */}
+      <VicobaGroupSavingsModal
+        isOpen={isVicobaOpen}
+        onClose={() => setIsVicobaOpen(false)}
+        language={language}
+        theme={theme}
+        user={user}
+        wallet={wallet}
       />
 
     </div>

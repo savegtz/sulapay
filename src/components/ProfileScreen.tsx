@@ -16,6 +16,7 @@ import {
   ScanFace
 } from 'lucide-react';
 import { Language, ThemeMode, UserProfile } from '../types';
+import { AntiSpoofingLabModal } from './AntiSpoofingLabModal';
 
 interface ProfileScreenProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   if (!isOpen) return null;
 
+  const [isAntiSpoofingLabOpen, setIsAntiSpoofingLabOpen] = useState(false);
   const isDark = theme === 'dark';
 
   const handleCopyReferral = () => {
@@ -223,6 +225,32 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   {language === 'sw' ? 'Mipangilio ya Kibiolojia (Biometrics)' : 'Biometric Settings'}
                 </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
+            {/* 3.5 Biometric Anti-Spoofing & Liveness Lab */}
+            <button
+              onClick={() => setIsAntiSpoofingLabOpen(true)}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {language === 'sw' ? 'Maabara ya Usalama wa Uso' : 'Anti-Spoofing Lab'}
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-emerald-500 text-slate-950">
+                      3D AI
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    {language === 'sw' ? 'Kagua uwezo wa kuzuia picha za bandia' : 'Test 3D Liveness & anti-deepfake defense'}
+                  </p>
+                </div>
               </div>
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </button>
@@ -418,6 +446,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </div>
           </div>
         )}
+
+        {/* Anti-Spoofing Lab Modal */}
+        <AntiSpoofingLabModal
+          isOpen={isAntiSpoofingLabOpen}
+          onClose={() => setIsAntiSpoofingLabOpen(false)}
+          language={language}
+          theme={theme}
+          user={user}
+        />
 
       </div>
     </div>
