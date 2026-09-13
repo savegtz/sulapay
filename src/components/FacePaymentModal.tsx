@@ -264,6 +264,19 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
     setIsProcessing(true);
     setPinError(null);
 
+    // STRICT BIOMETRIC ENROLLMENT GATE:
+    // "watu hawajajisajili uso lakini sistimu inawakubalia kukamilisha malipo"
+    if (!activeUser.isBiometricEnrolled) {
+      setIsProcessing(false);
+      setPinError(
+        language === 'sw'
+          ? 'Malipo yamekataliwa! Hujasajili uso wako kwenye mfumo wa FacePay. Ni lazima usajili uso kwanza.'
+          : 'Payment rejected! Face is not registered in FacePay. You must enroll your face first.'
+      );
+      setStep('FACE_NOT_REGISTERED');
+      return;
+    }
+
     // Validate PIN: matches savedUserPin or '1234'
     const isPinCorrect = codeToVerify === savedUserPin || codeToVerify === '1234';
 
@@ -651,6 +664,8 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
                   showWireframe={true}
                   confidenceScore={matchScore}
                   userName={faceTestMode === 'KNOWN' ? activeUser.fullName : undefined}
+                  videoRef={videoRef}
+                  isMirrored={true}
                 />
 
                 {/* HUD Top Status */}
@@ -1077,6 +1092,8 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
                   showWireframe={true}
                   confidenceScore={99.6}
                   userName={regFullName}
+                  videoRef={videoRef}
+                  isMirrored={true}
                 />
               </div>
 

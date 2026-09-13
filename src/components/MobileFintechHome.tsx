@@ -35,7 +35,8 @@ import {
   Bell,
   WifiOff,
   Store,
-  Users
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 import { Language, Merchant, ThemeMode, Transaction, UserProfile, Wallet } from '../types';
 import { formatTZS, formatDate } from '../utils/formatters';
@@ -303,7 +304,33 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
       </div>
 
       {/* FLOATING CARD 1: CURRENT BALANCE & QUICK ACCESS */}
-      <div className="relative -mt-10 px-4 z-20">
+      <div className="relative -mt-10 px-4 z-20 space-y-3">
+        {/* Unregistered Biometrics Warning Banner */}
+        {!user.isBiometricEnrolled && (
+          <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-between gap-3 text-left shadow-lg backdrop-blur-md">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-500 shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-amber-500 dark:text-amber-400">
+                  {language === 'sw' ? 'Hujasajili Uso Wako!' : 'Face Not Enrolled!'}
+                </p>
+                <p className="text-[10.5px] text-slate-600 dark:text-slate-400 truncate">
+                  {language === 'sw' ? 'Sajili uso sasa ili kuwezesha malipo ya FacePay.' : 'Enroll face to enable FacePay checkouts.'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold shrink-0 shadow-sm transition-all active:scale-95"
+            >
+              {language === 'sw' ? 'Sajili Sasa' : 'Enroll Now'}
+            </button>
+          </div>
+        )}
+
         <div className={`rounded-3xl p-5 shadow-xl transition-all duration-200 ${
           isDark 
             ? 'bg-slate-900/95 border border-slate-800 shadow-slate-950/60' 

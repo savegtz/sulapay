@@ -18,6 +18,24 @@ export const INITIAL_USER: UserProfile = {
   }
 };
 
+export const DEMO_UNREGISTERED_USER: UserProfile = {
+  id: 'usr_tz_unregistered_baraka',
+  fullName: 'Baraka Mrema',
+  phoneNumber: '+255 754 888 222',
+  nationalIdNida: '19920101-14101-00008-88',
+  email: 'baraka.mrema@gmail.com',
+  isBiometricEnrolled: false, // Hajasajili Uso Kwenye FacePay!
+  biometricEnrolledAt: undefined,
+  faceTemplateHash: undefined,
+  faceAvatarUrl: undefined,
+  securitySettings: {
+    maxLimitWithoutPin: 50000,
+    livenessSensitivity: 'STANDARD',
+    requireSmileCheck: true,
+    requireBlinkCheck: true,
+  }
+};
+
 export const INITIAL_WALLET: Wallet = {
   id: 'wlt_tz_4481c',
   userId: 'usr_tz_9821a',

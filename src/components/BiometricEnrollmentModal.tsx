@@ -209,6 +209,8 @@ export const BiometricEnrollmentModal: React.FC<BiometricEnrollmentModalProps> =
                   showLandmarkNodes={true}
                   showWireframe={true}
                   confidenceScore={99.5}
+                  videoRef={videoRef}
+                  isMirrored={true}
                 />
 
                 <div className="absolute bottom-2 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] text-emerald-400 font-mono z-30">

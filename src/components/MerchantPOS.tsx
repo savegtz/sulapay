@@ -48,7 +48,7 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
 
   // POS State
   const [billAmount, setBillAmount] = useState<string>('15000');
-  const [posState, setPosState] = useState<'ENTER_AMOUNT' | 'SCANNING_CUSTOMER' | 'CUSTOMER_FOUND' | 'PAID'>('ENTER_AMOUNT');
+  const [posState, setPosState] = useState<'ENTER_AMOUNT' | 'SCANNING_CUSTOMER' | 'CUSTOMER_FOUND' | 'CUSTOMER_UNREGISTERED' | 'PAID'>('ENTER_AMOUNT');
   const [lastTx, setLastTx] = useState<Transaction | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,13 +72,20 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
     if (posState === 'SCANNING_CUSTOMER') {
       startCamera();
       const timer = setTimeout(() => {
-        setPosState('CUSTOMER_FOUND');
+        // STRICT BIOMETRIC GATING:
+        // Check whether customer face profile is enrolled in FacePay database!
+        if (user.isBiometricEnrolled) {
+          setPosState('CUSTOMER_FOUND');
+        } else {
+          // Face NOT registered in FacePay! Stop and block unauthorized payment
+          setPosState('CUSTOMER_UNREGISTERED');
+        }
       }, 2000);
       return () => clearTimeout(timer);
     } else {
       stopCamera();
     }
-  }, [posState]);
+  }, [posState, user.isBiometricEnrolled]);
 
   const loadMerchantQr = async (merchantId: string) => {
     setQrLoading(true);
@@ -157,6 +164,17 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
   };
 
   const handleConfirmCustomerCharge = async () => {
+    // STRICT GATING: Reject if customer face is not enrolled!
+    if (!user.isBiometricEnrolled) {
+      setErrorMessage(
+        language === 'sw'
+          ? 'Malipo yamekataliwa: Mteja hajasajili uso kwenye mfumo wa FacePay!'
+          : 'Payment blocked: Customer has not enrolled face biometrics in FacePay!'
+      );
+      setPosState('CUSTOMER_UNREGISTERED');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const result = await apiClient.authorizePayment({
@@ -384,6 +402,8 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
                   showLandmarkNodes={true}
                   showWireframe={true}
                   confidenceScore={99.4}
+                  videoRef={videoRef}
+                  isMirrored={true}
                 />
               </div>
 
@@ -461,6 +481,64 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
                   className="w-full py-2.5 text-xs text-slate-400 hover:text-white transition-colors"
                 >
                   {t.actions.cancel}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CUSTOMER_UNREGISTERED STATE: USER GATING ENFORCEMENT */}
+          {posState === 'CUSTOMER_UNREGISTERED' && (
+            <div className="bg-slate-900 border border-amber-600/70 rounded-3xl p-6 space-y-6 shadow-2xl text-center">
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 border-2 border-amber-400 flex items-center justify-center mx-auto">
+                <AlertCircle className="w-9 h-9" />
+              </div>
+
+              <div>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/30 uppercase tracking-wider">
+                  {language === 'sw' ? 'Mteja Hajasajili Uso' : 'Unregistered Face Biometrics'}
+                </span>
+                <h3 className="text-xl font-bold text-white mt-2">
+                  {language === 'sw' ? 'Malipo Yamesitishwa: Uso Haujasajiliwa!' : 'Payment Blocked: Face Not Enrolled!'}
+                </h3>
+                <p className="text-xs text-slate-300 mt-2 max-w-md mx-auto leading-relaxed">
+                  {language === 'sw'
+                    ? `Mteja (${user.fullName}) yupo kwenye mfumo lakini hajasajili taarifa zake za uso (Biometrics). Kwa mujibu wa sheria za usalama wa FacePay, malipo ya uso hayawezi kutekelezwa bila usajili wa awali wa uso.`
+                    : `Customer (${user.fullName}) does not have an enrolled biometric face template. Under FacePay security rules, facial payments cannot be processed until biometrics are enrolled.`}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-left flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-white">{user.fullName}</h4>
+                  <p className="text-[11px] text-slate-400 font-mono">{user.phoneNumber}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-amber-400 font-mono block">HALI YA USALAMA</span>
+                  <span className="text-xs font-bold text-rose-400">BIOMETRIA HAIPO</span>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Quick enroll for demo customer
+                    user.isBiometricEnrolled = true;
+                    user.faceAvatarUrl = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80';
+                    setPosState('CUSTOMER_FOUND');
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-xl active:scale-98 transition-all flex items-center justify-center gap-2"
+                >
+                  <ScanFace className="w-4 h-4" />
+                  <span>{language === 'sw' ? 'Sajili Uso wa Mteja Hapa Hapa (Quick Enroll)' : 'Enroll Customer Face Now'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPosState('ENTER_AMOUNT')}
+                  className="w-full py-2.5 text-xs text-slate-400 hover:text-white transition-colors"
+                >
+                  {language === 'sw' ? 'Rudi Kwenye Kituo cha Mauzo' : 'Back to POS'}
                 </button>
               </div>
             </div>

@@ -196,6 +196,8 @@ export const AntiSpoofingLabModal: React.FC<AntiSpoofingLabModalProps> = ({
               showLandmarkNodes={true}
               showWireframe={true}
               confidenceScore={overallSecurityScore}
+              videoRef={videoRef}
+              isMirrored={true}
             />
 
             {/* Futuristic Scanning HUD Overlay */}

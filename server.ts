@@ -174,6 +174,35 @@ const registeredAccounts: RegisteredAccount[] = [
     user: { ...INITIAL_USER },
     wallet: { ...INITIAL_WALLET },
     pin: '1234'
+  },
+  {
+    user: {
+      id: 'usr_tz_unregistered_baraka',
+      fullName: 'Baraka Mrema',
+      phoneNumber: '+255 754 888 222',
+      nationalIdNida: '19920101141010000888',
+      email: 'baraka.mrema@gmail.com',
+      isBiometricEnrolled: false, // HAJASAJILI USO!
+      biometricEnrolledAt: undefined,
+      faceTemplateHash: undefined,
+      faceAvatarUrl: undefined,
+      securitySettings: {
+        maxLimitWithoutPin: 50000,
+        livenessSensitivity: 'STANDARD',
+        requireSmileCheck: true,
+        requireBlinkCheck: true
+      }
+    },
+    wallet: {
+      id: 'wlt_tz_baraka',
+      userId: 'usr_tz_unregistered_baraka',
+      currency: 'TZS',
+      balance: 180000,
+      linkedRail: 'TIGO_PESA',
+      linkedAccountNumber: '0754888222',
+      updatedAt: new Date().toISOString()
+    },
+    pin: '4321'
   }
 ];
 
@@ -793,6 +822,14 @@ app.post('/api/payments/authorize', async (req: Request, res: Response) => {
   const numericAmount = Number(amount);
   if (!numericAmount || numericAmount <= 0) {
     return res.status(400).json({ success: false, message: 'Invalid payment amount' });
+  }
+
+  // STRICT BIOMETRIC GATING: Unregistered faces cannot complete payments!
+  if (verificationMode === 'FACE_BIOMETRIC' && !currentUser.isBiometricEnrolled) {
+    return res.status(403).json({
+      success: false,
+      message: 'Malipo yamekataliwa! Mtumiaji huyu hajasajili uso kwenye mfumo wa FacePay (Biometric profile not enrolled). Huwezi kulipa bila kusajili uso wako kwanza.'
+    });
   }
 
   if (currentWallet.balance < numericAmount) {
