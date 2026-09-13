@@ -23,6 +23,7 @@ export interface FaceMeshOverlayProps {
     yaw: number;
     pitch: number;
   }) => void;
+  onDetectionChange?: (detected: boolean, metrics?: any) => void;
 }
 
 // 3D Point with Normalized Anatomical Coordinates (x: -1 to 1, y: -1 to 1, z: depth forward/back)
@@ -50,13 +51,14 @@ export const FaceMeshOverlay: React.FC<FaceMeshOverlayProps> = ({
   videoRef,
   isMirrored = true,
   enablePoseControls = true,
-  onFaceTracked
+  onFaceTracked,
+  onDetectionChange
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Real-time tracking state
-  const [faceDetected, setFaceDetected] = useState<boolean>(true);
+  // Real-time tracking state - starts false when videoRef is active until real face verified
+  const [faceDetected, setFaceDetected] = useState<boolean>(!videoRef);
   const [currentPose, setCurrentPose] = useState<{ yaw: number; pitch: number }>({ yaw: 0, pitch: 0 });
   const [isManualOverride, setIsManualOverride] = useState<boolean>(false);
 
@@ -382,10 +384,25 @@ export const FaceMeshOverlay: React.FC<FaceMeshOverlayProps> = ({
               }
             }
 
-            if (count > 60) {
+            const totalPixels = sw * sh;
+            const skinPercentage = (count / totalPixels) * 100;
+            const clusterW = Math.max(1, maxX - minX);
+            const clusterH = Math.max(1, maxY - minY);
+            const clusterAspect = clusterH / clusterW;
+
+            // Genuine human face criteria:
+            // 1. Skin tone pixel density must be at least 4.5% (rejects ceiling, white walls, table, lamp)
+            // 2. Cluster size must be at least 15% of frame dimensions
+            // 3. Cluster aspect ratio between 0.75 and 2.4
+            const isRealFace = skinPercentage >= 4.5 && 
+                               (clusterW / sw) >= 0.15 && 
+                               (clusterH / sh) >= 0.15 && 
+                               clusterAspect >= 0.75 && 
+                               clusterAspect <= 2.4;
+
+            if (isRealFace) {
               const avgX = sumX / count;
               const avgY = sumY / count;
-              const clusterW = Math.max(20, maxX - minX);
 
               // Mirrored selfie camera calculation
               const normX = isMirrored ? (1 - avgX / sw) : (avgX / sw);
@@ -398,11 +415,7 @@ export const FaceMeshOverlay: React.FC<FaceMeshOverlayProps> = ({
               tracker.targetH = tracker.targetW * 1.34;
               tracker.isDetected = true;
 
-              // =========================================================================
               // HEAD POSE (YAW / ROTATION) ESTIMATOR
-              // Computes horizontal asymmetry between left and right halves of face
-              // When user turns their head right: features shift towards that side
-              // =========================================================================
               const midX = Math.floor((minX + maxX) / 2);
               let leftFeatureMass = 0;
               let rightFeatureMass = 0;
@@ -413,7 +426,6 @@ export const FaceMeshOverlay: React.FC<FaceMeshOverlayProps> = ({
                   const r = imgData[idx];
                   const g = imgData[idx + 1];
                   const b = imgData[idx + 2];
-                  // High-contrast facial landmarks (pupils, nostrils, lips) are darker/redder
                   const contrast = (255 - (r * 0.3 + g * 0.59 + b * 0.11)) + (r - g);
                   if (x < midX) {
                     leftFeatureMass += contrast;
@@ -425,21 +437,89 @@ export const FaceMeshOverlay: React.FC<FaceMeshOverlayProps> = ({
 
               const totalMass = leftFeatureMass + rightFeatureMass;
               if (totalMass > 0) {
-                // In mirrored mode: if user turns head to their right (right of screen in mirrored video)
                 const asymmetry = (rightFeatureMass - leftFeatureMass) / totalMass;
                 const detectedYaw = isMirrored ? -asymmetry * 1.2 : asymmetry * 1.2;
                 tracker.targetYaw = Math.max(-0.65, Math.min(0.65, detectedYaw));
               }
 
               if (!faceDetected) setFaceDetected(true);
+              onDetectionChange?.(true, { skinPercentage, clusterW, clusterH });
             } else {
-              // No clear face found in camera view
+              // Wall, ceiling, lamp, floor, or empty room detected!
+              tracker.isDetected = false;
               if (faceDetected) setFaceDetected(false);
+              onDetectionChange?.(false, { skinPercentage, reason: 'Wall/Ceiling or no face present' });
             }
           }
         } catch (e) {
           // Camera feed initializing
         }
+      }
+
+      // If camera is running and NO face is detected in frame, show unmistakable NO_FACE warning and skip face mesh!
+      if (hasActiveVideo && !tracker.isDetected && !isManualOverride) {
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.save();
+        const boxW = width * 0.68;
+        const boxH = boxW * 1.25;
+        const boxX = (width - boxW) / 2;
+        const boxY = (height - boxH) / 2;
+
+        const pulseAlpha = 0.55 + 0.45 * Math.sin(now * 0.007);
+        ctx.strokeStyle = `rgba(239, 68, 68, ${pulseAlpha})`;
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([8, 6]);
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+        ctx.setLineDash([]);
+
+        // L-shaped corners in red
+        const cornerLen = 16;
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#ef4444';
+        // Top-Left
+        ctx.beginPath();
+        ctx.moveTo(boxX - 2, boxY + cornerLen);
+        ctx.lineTo(boxX - 2, boxY - 2);
+        ctx.lineTo(boxX + cornerLen, boxY - 2);
+        ctx.stroke();
+        // Top-Right
+        ctx.beginPath();
+        ctx.moveTo(boxX + boxW - cornerLen, boxY - 2);
+        ctx.lineTo(boxX + boxW + 2, boxY - 2);
+        ctx.lineTo(boxX + boxW + 2, boxY + cornerLen);
+        ctx.stroke();
+        // Bottom-Left
+        ctx.beginPath();
+        ctx.moveTo(boxX - 2, boxY + boxH - cornerLen);
+        ctx.lineTo(boxX - 2, boxY + boxH + 2);
+        ctx.lineTo(boxX + cornerLen, boxY + boxH + 2);
+        ctx.stroke();
+        // Bottom-Right
+        ctx.beginPath();
+        ctx.moveTo(boxX + boxW - cornerLen, boxY + boxH + 2);
+        ctx.lineTo(boxX + boxW + 2, boxY + boxH + 2);
+        ctx.lineTo(boxX + boxW + 2, boxY + boxH - cornerLen);
+        ctx.stroke();
+
+        // Warning banner
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+        ctx.fillRect(boxX, boxY + boxH - 42, boxW, 42);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(boxX, boxY + boxH - 42, boxW, 42);
+
+        ctx.font = 'bold 11px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#ef4444';
+        ctx.textAlign = 'center';
+        ctx.fillText('❌ HAKUNA USO (NO FACE)', width / 2, boxY + boxH - 24);
+        ctx.font = '9.5px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#fca5a5';
+        ctx.fillText('Elekeza kamera usoni mwako', width / 2, boxY + boxH - 10);
+        ctx.restore();
+
+        animationFrameId = requestAnimationFrame(render);
+        return;
       }
 
       // Smooth EMA interpolation for 60fps tracking

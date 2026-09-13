@@ -22,6 +22,7 @@ export interface UserProfile {
   phoneNumber: string;
   nationalIdNida: string;
   email: string;
+  pin?: string;
   isBiometricEnrolled: boolean;
   biometricEnrolledAt?: string;
   faceTemplateHash?: string;
@@ -102,6 +103,26 @@ export interface BiometricVerificationResult {
   biometricToken?: string;
   analysisMessage: string;
   executionTimeMs: number;
+}
+
+export interface FaceVerificationResponse {
+  success: boolean;
+  stage: 'FACE_DETECTION' | 'LIVENESS' | 'FACE_MATCH' | 'VERIFIED';
+  message: string;
+  user?: {
+    id: string;
+    fullName: string;
+    phoneNumber: string;
+    accountNumber: string;
+    nationalIdNida?: string;
+    faceAvatarUrl?: string;
+    isBiometricEnrolled?: boolean;
+  };
+  verificationToken?: string;
+  confidenceScore?: number;
+  livenessScore?: number;
+  notes?: string;
+  detectedObject?: string;
 }
 
 export interface PaymentProviderStatus {

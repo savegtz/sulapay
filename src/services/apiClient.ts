@@ -5,6 +5,7 @@ import {
   Transaction, 
   PaymentProviderStatus, 
   BiometricVerificationResult,
+  FaceVerificationResponse,
   PaymentRail,
   DatabaseStatus,
   RegisterRequest,
@@ -193,6 +194,24 @@ export const apiClient = {
     return res.json();
   },
 
+  async verifyFace(params: {
+    image: string;
+    mode?: 'PAYMENT' | 'ENROLLMENT';
+    faceTestMode?: 'KNOWN' | 'UNKNOWN';
+    clientMetrics?: any;
+  }): Promise<FaceVerificationResponse> {
+    const res = await fetch('/api/biometrics/verify-face', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Face verification service unreachable');
+    }
+    return res.json();
+  },
+
   async enrollBiometrics(params: { faceAvatarUrl?: string }): Promise<UserProfile> {
     const res = await fetch('/api/biometrics/enroll', {
       method: 'POST',
@@ -211,6 +230,8 @@ export const apiClient = {
     amount: number;
     paymentRail: PaymentRail;
     verificationMode: 'FACE_BIOMETRIC' | 'PIN_FALLBACK';
+    verificationToken?: string;
+    pin?: string;
     biometricScore: number;
     notes?: string;
   }): Promise<{ transaction: Transaction; updatedWallet: Wallet; disclaimer: string }> {
