@@ -15,6 +15,7 @@ import {
   Fingerprint
 } from 'lucide-react';
 import { Language, ThemeMode, UserProfile } from '../types';
+import { FaceMeshOverlay } from './FaceMeshOverlay';
 
 interface AntiSpoofingLabModalProps {
   isOpen: boolean;
@@ -187,8 +188,18 @@ export const AntiSpoofingLabModal: React.FC<AntiSpoofingLabModalProps> = ({
               </div>
             )}
 
+            {/* 3D Facial Mesh Topological Canvas Overlay */}
+            <FaceMeshOverlay
+              status="SCANNING"
+              showBoundingBox={true}
+              showScanLine={true}
+              showLandmarkNodes={true}
+              showWireframe={true}
+              confidenceScore={overallSecurityScore}
+            />
+
             {/* Futuristic Scanning HUD Overlay */}
-            <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
+            <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between z-30">
               <div className="flex items-center justify-between text-[10px] font-mono text-emerald-400">
                 <span className="flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />

@@ -27,6 +27,7 @@ import { apiClient } from '../services/apiClient';
 import { MERCHANTS } from '../data/mockData';
 import { soundbox } from '../utils/soundboxAudio';
 import { SoundboxSpeaker } from './SoundboxSpeaker';
+import { FaceMeshOverlay } from './FaceMeshOverlay';
 
 interface MerchantPOSProps {
   merchant: Merchant;
@@ -376,8 +377,14 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-x-0 h-1 bg-emerald-400 animate-bounce shadow-[0_0_15px_#10b981] z-20" />
-                <div className="absolute inset-5 rounded-[45%] border-2 border-dashed border-emerald-400 pointer-events-none" />
+                <FaceMeshOverlay
+                  status="SCANNING"
+                  showBoundingBox={true}
+                  showScanLine={true}
+                  showLandmarkNodes={true}
+                  showWireframe={true}
+                  confidenceScore={99.4}
+                />
               </div>
 
               <div>

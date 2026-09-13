@@ -313,6 +313,10 @@ export default function App() {
         initialMerchant={selectedMerchant}
         language={language}
         onPaymentSuccess={handlePaymentSuccess}
+        onUserRegistered={(newUser, newWallet) => {
+          setUser(newUser);
+          setWallet(newWallet);
+        }}
       />
 
       <BiometricEnrollmentModal

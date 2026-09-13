@@ -13,6 +13,7 @@ import {
 import { Language, UserProfile } from '../types';
 import { translations } from '../utils/translations';
 import { apiClient } from '../services/apiClient';
+import { FaceMeshOverlay } from './FaceMeshOverlay';
 
 interface BiometricEnrollmentModalProps {
   isOpen: boolean;
@@ -200,13 +201,17 @@ export const BiometricEnrollmentModal: React.FC<BiometricEnrollmentModalProps> =
                   />
                 )}
 
-                {/* Laser scan line */}
-                <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse shadow-[0_0_12px_#10b981] z-20 pointer-events-none" />
+                {/* 3D Face Mesh Topological Overlay */}
+                <FaceMeshOverlay
+                  status="SCANNING"
+                  showBoundingBox={true}
+                  showScanLine={true}
+                  showLandmarkNodes={true}
+                  showWireframe={true}
+                  confidenceScore={99.5}
+                />
 
-                {/* Oval guide */}
-                <div className="absolute inset-5 rounded-[45%] border-2 border-dashed border-emerald-400/70 pointer-events-none" />
-
-                <div className="absolute bottom-2 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] text-emerald-400 font-mono">
+                <div className="absolute bottom-2 bg-slate-950/80 px-2 py-0.5 rounded text-[10px] text-emerald-400 font-mono z-30">
                   {currentStep === 1 ? 'NEUTRAL POSE' : 'MICRO-SMILE LIVENESS'}
                 </div>
               </div>
