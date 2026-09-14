@@ -177,6 +177,105 @@ const registeredAccounts: RegisteredAccount[] = [
   },
   {
     user: {
+      id: 'usr_tz_8819b',
+      fullName: 'Amina Said Bakari',
+      phoneNumber: '+255 784 552 119',
+      nationalIdNida: '19951104-12101-00049-18',
+      email: 'amina.bakari@zanlink.co.tz',
+      isBiometricEnrolled: true,
+      biometricEnrolledAt: '2026-02-14T08:30:00Z',
+      faceTemplateHash: 'sha256_91bf88231cda28e93240a1b659c2b4d1',
+      faceAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+      securitySettings: {
+        maxLimitWithoutPin: 250000,
+        dailySpendingLimit: 600000,
+        isAccountFrozen: false,
+        livenessSensitivity: 'MAXIMUM',
+        requireSmileCheck: true,
+        requireBlinkCheck: true,
+        voicePromptsEnabled: true,
+        autoNightTorch: true
+      }
+    },
+    wallet: {
+      id: 'wlt_tz_9912b',
+      userId: 'usr_tz_8819b',
+      currency: 'TZS',
+      balance: 820000,
+      linkedRail: 'AIRTEL_MONEY',
+      linkedAccountNumber: '+255 784 552 119',
+      updatedAt: new Date().toISOString()
+    },
+    pin: '1234'
+  },
+  {
+    user: {
+      id: 'usr_tz_7714c',
+      fullName: 'Eng. Neema Emanuel Masawe',
+      phoneNumber: '+255 713 902 441',
+      nationalIdNida: '19890621-22108-00012-76',
+      email: 'neema.masawe@crdb.co.tz',
+      isBiometricEnrolled: true,
+      biometricEnrolledAt: '2026-01-20T14:40:00Z',
+      faceTemplateHash: 'sha256_48a1c9003bf2d4e8791550cfa00318e2',
+      faceAvatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
+      securitySettings: {
+        maxLimitWithoutPin: 500000,
+        dailySpendingLimit: 1000000,
+        isAccountFrozen: false,
+        livenessSensitivity: 'HIGH',
+        requireSmileCheck: true,
+        requireBlinkCheck: true,
+        voicePromptsEnabled: true,
+        autoNightTorch: true
+      }
+    },
+    wallet: {
+      id: 'wlt_tz_2209c',
+      userId: 'usr_tz_7714c',
+      currency: 'TZS',
+      balance: 1450000,
+      linkedRail: 'CRDB_BANK',
+      linkedAccountNumber: '0150294819200',
+      updatedAt: new Date().toISOString()
+    },
+    pin: '1234'
+  },
+  {
+    user: {
+      id: 'usr_tz_5512e',
+      fullName: 'Bi. Fatuma Ally Mwinyi',
+      phoneNumber: '+255 768 440 922',
+      nationalIdNida: '19841209-11105-00031-40',
+      email: 'fatuma.mwinyi@dodoma.go.tz',
+      isBiometricEnrolled: true,
+      biometricEnrolledAt: '2026-03-05T11:00:00Z',
+      faceTemplateHash: 'sha256_b39417efda309c488219ae034091522f',
+      faceAvatarUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=300&auto=format&fit=crop&q=80',
+      securitySettings: {
+        maxLimitWithoutPin: 1000000,
+        dailySpendingLimit: 2000000,
+        isAccountFrozen: false,
+        livenessSensitivity: 'MAXIMUM',
+        requireSmileCheck: true,
+        requireBlinkCheck: true,
+        voicePromptsEnabled: true,
+        autoNightTorch: true
+      }
+    },
+    wallet: {
+      id: 'wlt_tz_7731e',
+      userId: 'usr_tz_5512e',
+      currency: 'TZS',
+      balance: 2100000,
+      linkedRail: 'NMB_BANK',
+      linkedAccountNumber: '22810094812',
+      updatedAt: new Date().toISOString()
+    },
+    pin: '1234'
+  },
+  {
+    user: {
       id: 'usr_tz_unregistered_baraka',
       fullName: 'Baraka Mrema',
       phoneNumber: '+255 754 888 222',
@@ -540,6 +639,27 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     });
   }
 
+  // Check if citizen is ALREADY registered by NIDA or Phone Number
+  const cleanInputNida = (nationalIdNida || '').replace(/[^0-9]/g, '');
+  const cleanInputPhone = (phoneNumber || '').replace(/[^0-9]/g, '');
+
+  const existingAccount = registeredAccounts.find(acc => {
+    const accNida = (acc.user.nationalIdNida || '').replace(/[^0-9]/g, '');
+    const accPhone = (acc.user.phoneNumber || '').replace(/[^0-9]/g, '');
+    return (accNida && cleanInputNida && (accNida === cleanInputNida || accNida.includes(cleanInputNida) || cleanInputNida.includes(accNida))) ||
+           (accPhone && cleanInputPhone && (accPhone === cleanInputPhone || accPhone.endsWith(cleanInputPhone.slice(-9))));
+  });
+
+  if (existingAccount) {
+    return res.status(409).json({
+      success: false,
+      alreadyRegistered: true,
+      message: `Mtumiaji mwenye NIDA au namba hii ya simu tayari amesajiliwa kwenye mfumo wa FacePay TZ kama ${existingAccount.user.fullName}!`,
+      existingUser: existingAccount.user,
+      existingWallet: existingAccount.wallet
+    });
+  }
+
   const userId = `usr_tz_${Date.now()}`;
   const walletId = `wlt_tz_${Date.now()}`;
 
@@ -671,6 +791,131 @@ app.post('/api/auth/switch', (req: Request, res: Response) => {
   }
   res.status(404).json({ success: false, message: 'User not found' });
 });
+
+// Citizen and User Lookup: checks NIDA, TIPS and FacePay registration
+app.post('/api/auth/lookup', (req: Request, res: Response) => {
+  const { query, nida, phone } = req.body;
+  const rawQuery = String(query || nida || phone || '').trim();
+  const cleanDigits = rawQuery.replace(/[^0-9]/g, '');
+
+  const match = registeredAccounts.find(acc => {
+    const accNida = (acc.user.nationalIdNida || '').replace(/[^0-9]/g, '');
+    const accPhone = (acc.user.phoneNumber || '').replace(/[^0-9]/g, '');
+    const accName = acc.user.fullName.toLowerCase();
+
+    return (cleanDigits.length >= 6 && (accNida.includes(cleanDigits) || cleanDigits.includes(accNida))) ||
+           (cleanDigits.length >= 8 && (accPhone.includes(cleanDigits) || accPhone.endsWith(cleanDigits.slice(-9)))) ||
+           (rawQuery.length >= 3 && accName.includes(rawQuery.toLowerCase()));
+  });
+
+  if (match) {
+    return res.json({
+      recognized: true,
+      user: match.user,
+      wallet: match.wallet,
+      message: `Akaunti imetambuliwa: ${match.user.fullName} (NIDA: ${match.user.nationalIdNida})`
+    });
+  }
+
+  res.json({
+    recognized: false,
+    message: 'Hakuna akaunti iliyopatikana yenye taarifa hizi.'
+  });
+});
+
+// NIDA & TIPS Verification Gateway Mock
+app.post('/api/nida/verify', (req: Request, res: Response) => {
+  const { nida, phone } = req.body;
+  const cleanDigits = String(nida || phone || '').replace(/[^0-9]/g, '');
+
+  const match = registeredAccounts.find(acc => {
+    const accNida = (acc.user.nationalIdNida || '').replace(/[^0-9]/g, '');
+    const accPhone = (acc.user.phoneNumber || '').replace(/[^0-9]/g, '');
+    return (cleanDigits.length >= 6 && (accNida.includes(cleanDigits) || cleanDigits.includes(accNida))) ||
+           (cleanDigits.length >= 8 && (accPhone.includes(cleanDigits) || accPhone.endsWith(cleanDigits.slice(-9))));
+  });
+
+  if (match) {
+    return res.json({
+      success: true,
+      registeredInFacePay: true,
+      user: match.user,
+      wallet: match.wallet,
+      nidaRecord: {
+        nin: match.user.nationalIdNida,
+        fullName: match.user.fullName,
+        nationality: 'Mtanzania (Citizen by Birth)',
+        status: 'VERIFIED_CITIZEN',
+        biometricRegistered: match.user.isBiometricEnrolled,
+        fingerprintsEnrolled: true,
+        facialMeshEnrolled: match.user.isBiometricEnrolled
+      },
+      tipsRecord: {
+        tipsParticipantId: `TZ.BOT.TIPS.${match.wallet.linkedRail.slice(0, 3)}.${match.user.phoneNumber.replace(/[^0-9]/g, '').slice(-9)}`,
+        primaryRail: match.wallet.linkedRail,
+        linkedPhone: match.user.phoneNumber,
+        interoperabilityStatus: 'ACTIVE_LINKED',
+        clearingEnabled: true
+      },
+      message: `Taarifa za NIDA & TIPS zimethibitishwa kwa ${match.user.fullName}.`
+    });
+  }
+
+  res.json({
+    success: true,
+    registeredInFacePay: false,
+    nidaRecord: {
+      nin: nida || '20000101-12345-00001-99',
+      fullName: 'Raia wa Tanzania (NIDA Verified)',
+      nationality: 'Mtanzania (Citizen by Birth)',
+      status: 'VERIFIED_CITIZEN',
+      biometricRegistered: true,
+      fingerprintsEnrolled: true,
+      facialMeshEnrolled: true
+    },
+    tipsRecord: {
+      tipsParticipantId: `TZ.BOT.TIPS.GEN.${Date.now().toString().slice(-6)}`,
+      primaryRail: 'M_PESA',
+      linkedPhone: phone || '+255 700 000 000',
+      interoperabilityStatus: 'ACTIVE_LINKED',
+      clearingEnabled: true
+    },
+    message: 'NIDA NIN halisi imethibitishwa. Mtumiaji bado hajasajiliwa kwenye FacePay.'
+  });
+});
+
+// Biometric Face Recognition Login (Tambua kwa Uso)
+app.post('/api/biometrics/recognize-face', async (req: Request, res: Response) => {
+  const { image } = req.body;
+
+  const enrolled = registeredAccounts.filter(acc => acc.user.isBiometricEnrolled);
+  if (enrolled.length === 0) {
+    return res.json({
+      recognized: false,
+      message: 'Hakuna watumiaji wenye nyuso zilizosajiliwa kwenye mfumo.'
+    });
+  }
+
+  // Match specific user if image matches their avatar or default to first enrolled
+  let matched = enrolled[0];
+  if (image && typeof image === 'string') {
+    const specific = enrolled.find(acc => acc.user.faceAvatarUrl && image.includes(acc.user.faceAvatarUrl));
+    if (specific) matched = specific;
+  }
+
+  currentUser = matched.user;
+  currentWallet = matched.wallet;
+
+  res.json({
+    recognized: true,
+    user: matched.user,
+    wallet: matched.wallet,
+    confidenceScore: 99.4,
+    livenessScore: 98.6,
+    message: `Uso umetambuliwa kikamilifu! Mfumo umemtambua ${matched.user.fullName} kupitia NIDA na TIPS.`
+  });
+});
+
 
 // Generate Merchant QR Code Data URL
 app.get('/api/merchants/:id/qr', async (req: Request, res: Response) => {

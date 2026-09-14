@@ -158,6 +158,28 @@ export const BiometricEnrollmentModal: React.FC<BiometricEnrollmentModalProps> =
 
         {/* Content */}
         <div className="p-6 space-y-5">
+          {/* Recognition status if already enrolled */}
+          {user.isBiometricEnrolled && !isDone && (
+            <div className="p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-emerald-500 text-slate-950">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">
+                    {language === 'sw' ? 'Uso Wako Tayari Umetambuliwa & Kusajiliwa!' : 'Face Already Enrolled & Recognized!'}
+                  </p>
+                  <p className="text-[10px] text-emerald-300 font-mono mt-0.5">
+                    NIDA: {user.nationalIdNida} • TIPS Biometric Switch Active
+                  </p>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono border border-emerald-500/30">
+                VERIFIED
+              </span>
+            </div>
+          )}
+
           {/* Step Badges */}
           <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-4">
             {[

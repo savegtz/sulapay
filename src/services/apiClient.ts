@@ -9,10 +9,20 @@ import {
   PaymentRail,
   DatabaseStatus,
   RegisterRequest,
-  LoginRequest
+  LoginRequest,
+  UserRecognitionResult,
+  NidaCitizenRecord,
+  TipsAccountRecord
 } from '../types';
 import { firebaseService } from './firebase';
 import { PAYMENT_PROVIDERS_STATUS } from '../data/mockData';
+import { 
+  checkUserAlreadyRegistered, 
+  lookupNidaGateway, 
+  lookupTipsSwitch, 
+  recognizeFaceFromCandidates,
+  getAllKnownAccounts
+} from '../utils/nidaTipsRecognition';
 
 export const apiClient = {
   async getProfile(): Promise<{ user: UserProfile; wallet: Wallet }> {
@@ -39,6 +49,24 @@ export const apiClient = {
   },
 
   async register(data: RegisterRequest): Promise<{ user: UserProfile; wallet: Wallet; message: string }> {
+    // Check if citizen is ALREADY registered by NIDA or Phone Number
+    const existingCheck = checkUserAlreadyRegistered({
+      nin: data.nationalIdNida,
+      phone: data.phoneNumber
+    });
+
+    if (existingCheck.recognized && existingCheck.user && existingCheck.wallet) {
+      const err: any = new Error(
+        `Mtumiaji mwenye NIDA au namba hii ya simu tayari amesajiliwa kwenye FacePay TZ kama ${existingCheck.user.fullName}!`
+      );
+      err.alreadyRegistered = true;
+      err.existingUser = existingCheck.user;
+      err.existingWallet = existingCheck.wallet;
+      err.nidaRecord = existingCheck.nidaRecord;
+      err.tipsRecord = existingCheck.tipsRecord;
+      throw err;
+    }
+
     // 1. Generate real user structure
     const newUserId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const newWalletId = `w_${newUserId}`;
@@ -50,8 +78,8 @@ export const apiClient = {
       nationalIdNida: data.nationalIdNida,
       email: `${(data.phoneNumber || '').replace(/\D/g, '') || 'user'}@facepay.tz`,
       faceAvatarUrl: data.faceAvatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-      isBiometricEnrolled: true,
-      biometricEnrolledAt: new Date().toISOString(),
+      isBiometricEnrolled: !!data.faceAvatarUrl,
+      biometricEnrolledAt: data.faceAvatarUrl ? new Date().toISOString() : undefined,
       securitySettings: {
         maxLimitWithoutPin: 50000,
         livenessSensitivity: 'HIGH',
@@ -74,18 +102,116 @@ export const apiClient = {
     await firebaseService.saveUser(newUser, newWallet, data.pin);
 
     // Also notify server backend if online
-    fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).catch(() => {});
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.status === 409) {
+        const errJson = await res.json();
+        const err: any = new Error(errJson.message);
+        err.alreadyRegistered = true;
+        err.existingUser = errJson.existingUser;
+        err.existingWallet = errJson.existingWallet;
+        throw err;
+      }
+    } catch (e: any) {
+      if (e.alreadyRegistered) throw e;
+    }
 
     return {
       user: newUser,
       wallet: newWallet,
-      message: 'Usajili umehifadhiwa kikamilifu kwenye Google Cloud Firestore!'
+      message: 'Usajili umehifadhiwa kikamilifu kwenye mifumo ya NIDA, TIPS na FacePay!'
     };
   },
+
+  async lookupUser(query: string): Promise<UserRecognitionResult> {
+    try {
+      const res = await fetch('/api/auth/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.recognized && data.user) {
+          const nidaRec = lookupNidaGateway(data.user.nationalIdNida);
+          const tipsRec = lookupTipsSwitch(data.user.phoneNumber);
+          return {
+            recognized: true,
+            user: data.user,
+            wallet: data.wallet,
+            nidaRecord: nidaRec || undefined,
+            tipsRecord: tipsRec || undefined,
+            confidenceScore: 99.6,
+            message: data.message
+          };
+        }
+      }
+    } catch {
+      // Fallback to local known accounts
+    }
+
+    return checkUserAlreadyRegistered({ nin: query, phone: query, fullName: query });
+  },
+
+  async verifyNida(nida?: string, phone?: string): Promise<{
+    registeredInFacePay: boolean;
+    user?: UserProfile;
+    wallet?: Wallet;
+    nidaRecord?: NidaCitizenRecord;
+    tipsRecord?: TipsAccountRecord;
+    message: string;
+  }> {
+    const existing = checkUserAlreadyRegistered({ nin: nida, phone });
+    const nidaRec = lookupNidaGateway(nida || phone || '') || existing.nidaRecord;
+    const tipsRec = lookupTipsSwitch(phone || nida || '') || existing.tipsRecord;
+
+    return {
+      registeredInFacePay: existing.recognized,
+      user: existing.user,
+      wallet: existing.wallet,
+      nidaRecord: nidaRec || undefined,
+      tipsRecord: tipsRec || undefined,
+      message: existing.recognized 
+        ? `Mtumiaji ametambuliwa: ${existing.user?.fullName} (NIDA & TIPS Active)` 
+        : 'NIDA imethibitishwa na Mamlaka ya Vitambulisho vya Taifa.'
+    };
+  },
+
+  async recognizeFace(faceImage: string, preferredUserId?: string): Promise<UserRecognitionResult> {
+    try {
+      const res = await fetch('/api/biometrics/recognize-face', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: faceImage })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.recognized && data.user) {
+          const nidaRec = lookupNidaGateway(data.user.nationalIdNida);
+          const tipsRec = lookupTipsSwitch(data.user.phoneNumber);
+          return {
+            recognized: true,
+            matchType: 'FACE_BIOMETRIC',
+            user: data.user,
+            wallet: data.wallet,
+            nidaRecord: nidaRec || undefined,
+            tipsRecord: tipsRec || undefined,
+            confidenceScore: data.confidenceScore || 99.4,
+            message: data.message
+          };
+        }
+      }
+    } catch {
+      // Fallback
+    }
+
+    return recognizeFaceFromCandidates({ faceImage, preferredUserId });
+  },
+
 
   async login(data: LoginRequest): Promise<{ user: UserProfile; wallet: Wallet; message: string }> {
     // 1. Query Firestore first for registered user

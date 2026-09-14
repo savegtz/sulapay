@@ -164,3 +164,36 @@ export interface LoginRequest {
   phoneNumber: string;
   pin: string;
 }
+
+export interface NidaCitizenRecord {
+  nin: string;
+  fullName: string;
+  dateOfBirth?: string;
+  gender?: 'ME' | 'KE' | 'M' | 'F';
+  nationality: string;
+  biometricRegistered: boolean;
+  status: 'VERIFIED_CITIZEN' | 'PENDING' | 'NOT_FOUND';
+  fingerprintsEnrolled: boolean;
+  facialMeshEnrolled: boolean;
+  issueYear?: string;
+}
+
+export interface TipsAccountRecord {
+  tipsParticipantId: string;
+  primaryRail: PaymentRail;
+  linkedPhone: string;
+  linkedBanks: string[];
+  interoperabilityStatus: 'ACTIVE_LINKED' | 'UNLINKED';
+  clearingEnabled: boolean;
+}
+
+export interface UserRecognitionResult {
+  recognized: boolean;
+  matchType?: 'FACE_BIOMETRIC' | 'NIDA_NIN' | 'PHONE_TIPS';
+  user?: UserProfile;
+  wallet?: Wallet;
+  nidaRecord?: NidaCitizenRecord;
+  tipsRecord?: TipsAccountRecord;
+  confidenceScore?: number;
+  message: string;
+}
