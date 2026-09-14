@@ -149,6 +149,17 @@ export default function App() {
     setCurrentRole('LANDING');
   };
 
+  const handleUpdateUser = (updated: Partial<UserProfile>) => {
+    setUser(prev => ({
+      ...prev,
+      ...updated,
+      securitySettings: {
+        ...(prev.securitySettings || {}),
+        ...(updated.securitySettings || {})
+      }
+    }));
+  };
+
   const handleInitiatePayment = (merchant?: Merchant) => {
     if (!isAuthenticated) {
       handleOpenLogin();
@@ -282,6 +293,7 @@ export default function App() {
             onOpenAuth={() => setIsAuthModalOpen(true)}
             onSelectTransaction={(tx) => setReceiptTx(tx)}
             onToggleLanguage={handleToggleLanguage}
+            onUpdateUser={handleUpdateUser}
           />
         )}
 

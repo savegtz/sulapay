@@ -65,6 +65,7 @@ interface MobileFintechHomeProps {
   onSelectTransaction: (tx: Transaction) => void;
   onOpenSettings?: () => void;
   onToggleLanguage?: () => void;
+  onUpdateUser?: (updated: Partial<UserProfile>) => void;
 }
 
 interface ServiceModalState {
@@ -89,7 +90,8 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
   onOpenOfflineQR,
   onSelectTransaction,
   onOpenSettings,
-  onToggleLanguage
+  onToggleLanguage,
+  onUpdateUser
 }) => {
   const [showBalance, setShowBalance] = useState(true);
   const [currencyMode, setCurrencyMode] = useState<'TZS' | 'USD'>('USD');
@@ -1231,6 +1233,7 @@ export const MobileFintechHome: React.FC<MobileFintechHomeProps> = ({
           setIsProfileOpen(false);
           onInitiatePayment();
         }}
+        onUpdateUser={onUpdateUser}
       />
 
       {/* Cards and Banks Management Modal */}

@@ -188,9 +188,13 @@ const registeredAccounts: RegisteredAccount[] = [
       faceAvatarUrl: undefined,
       securitySettings: {
         maxLimitWithoutPin: 50000,
+        dailySpendingLimit: 500000,
+        isAccountFrozen: false,
         livenessSensitivity: 'STANDARD',
         requireSmileCheck: true,
-        requireBlinkCheck: true
+        requireBlinkCheck: true,
+        voicePromptsEnabled: true,
+        autoNightTorch: true
       }
     },
     wallet: {
@@ -551,9 +555,13 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     faceAvatarUrl: faceAvatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
     securitySettings: {
       maxLimitWithoutPin: 100000,
+      dailySpendingLimit: 500000,
+      isAccountFrozen: false,
       livenessSensitivity: 'HIGH',
       requireSmileCheck: true,
-      requireBlinkCheck: true
+      requireBlinkCheck: true,
+      voicePromptsEnabled: true,
+      autoNightTorch: true
     }
   };
 

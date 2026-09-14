@@ -12,9 +12,14 @@ export const INITIAL_USER: UserProfile = {
   faceAvatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80',
   securitySettings: {
     maxLimitWithoutPin: 100000, // 100,000 TZS can be paid with Face-only; higher requires 4-digit PIN
+    dailySpendingLimit: 500000, // 500,000 TZS daily limit
+    dailySpentAmount: 45000,
+    isAccountFrozen: false,
     livenessSensitivity: 'HIGH',
     requireSmileCheck: true,
     requireBlinkCheck: true,
+    voicePromptsEnabled: true,
+    autoNightTorch: false,
   }
 };
 
@@ -30,9 +35,14 @@ export const DEMO_UNREGISTERED_USER: UserProfile = {
   faceAvatarUrl: undefined,
   securitySettings: {
     maxLimitWithoutPin: 50000,
+    dailySpendingLimit: 300000,
+    dailySpentAmount: 0,
+    isAccountFrozen: false,
     livenessSensitivity: 'STANDARD',
     requireSmileCheck: true,
     requireBlinkCheck: true,
+    voicePromptsEnabled: true,
+    autoNightTorch: false,
   }
 };
 

@@ -23,7 +23,12 @@ import {
   Phone,
   CreditCard,
   Check,
-  ShieldAlert
+  ShieldAlert,
+  Volume2,
+  VolumeX,
+  Flashlight,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Language, Merchant, PaymentRail, Transaction, UserProfile, Wallet } from '../types';
 import { translations } from '../utils/translations';
@@ -93,6 +98,10 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
   const [capturedSnapshot, setCapturedSnapshot] = useState<string>('');
   const [detectionReason, setDetectionReason] = useState<string>('');
   const [verificationToken, setVerificationToken] = useState<string>('');
+  const [voiceGuidanceEnabled, setVoiceGuidanceEnabled] = useState<boolean>(
+    initialUser.securitySettings?.voicePromptsEnabled ?? true
+  );
+  const [nightTorchActive, setNightTorchActive] = useState<boolean>(false);
   const [verifiedUserDetails, setVerifiedUserDetails] = useState<{
     id: string;
     fullName: string;
@@ -206,13 +215,60 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
     return defaultUrl;
   };
 
+  // Toggle Night Screen Torch / Camera Flashlight
+  const toggleTorch = async () => {
+    const nextState = !nightTorchActive;
+    setNightTorchActive(nextState);
+    if (cameraStream) {
+      try {
+        const track = cameraStream.getVideoTracks()[0];
+        if (track && 'applyConstraints' in track) {
+          await track.applyConstraints({
+            advanced: [{ torch: nextState } as any]
+          });
+        }
+      } catch (e) {
+        // Hardware torch optional, screen illumination handles it
+      }
+    }
+  };
+
   // 1. Proceed from Details to Live Face Scanning
   const handleProceedToScan = async () => {
+    // 🛡️ 1. Security Check: Emergency Account Freeze
+    if (activeUser.securitySettings?.isAccountFrozen) {
+      setErrorMessage(
+        language === 'sw'
+          ? '⚠️ Akaunti hii imefungwa kwa dharura (Account Frozen). Malipo ya uso yamezuiwa kwa usalama wako. Unaweza kuifungua kupitia Wasifu (Profile).'
+          : '⚠️ Account is currently frozen for security. Biometric face payments are locked. You can unfreeze in Profile.'
+      );
+      if (voiceGuidanceEnabled) {
+        soundbox.speakVoicePrompt('ACCOUNT_FROZEN', language);
+      }
+      return;
+    }
+
     const numAmount = Number(amount);
     if (!numAmount || numAmount <= 0) {
       setErrorMessage(language === 'sw' ? 'Tafadhali weka kiasi halali cha TZS' : 'Please enter a valid TZS amount');
       return;
     }
+
+    // 🛡️ 2. Security Check: Daily Spending Limit
+    const dailyLimit = activeUser.securitySettings?.dailySpendingLimit || 500000;
+    const spentToday = activeUser.securitySettings?.dailySpentAmount || 0;
+    if (spentToday + numAmount > dailyLimit) {
+      setErrorMessage(
+        language === 'sw'
+          ? `⚠️ Malipo haya ya TZS ${numAmount.toLocaleString()} yanazidi kikomo chako cha matumizi cha siku (TZS ${dailyLimit.toLocaleString()}). Salio la leo lililobaki: TZS ${Math.max(0, dailyLimit - spentToday).toLocaleString()}.`
+          : `⚠️ Amount of TZS ${numAmount.toLocaleString()} exceeds your daily spending limit of TZS ${dailyLimit.toLocaleString()}. Remaining today: TZS ${Math.max(0, dailyLimit - spentToday).toLocaleString()}.`
+      );
+      if (voiceGuidanceEnabled) {
+        soundbox.speakVoicePrompt('LIMIT_EXCEEDED', language);
+      }
+      return;
+    }
+
     if (numAmount > activeWallet.balance) {
       setErrorMessage(
         language === 'sw' 
@@ -229,14 +285,21 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
     setPinError(null);
     await startCamera();
 
-    // Sequence the face detection & liveness analysis
+    // Sequence the face detection & liveness analysis with voice prompts
     runScanningSequence();
   };
 
   const runScanningSequence = () => {
     // 1. Align phase
+    if (voiceGuidanceEnabled) {
+      soundbox.speakVoicePrompt('LOOK_AT_CAMERA', language);
+    }
+
     setTimeout(() => {
       setScanSubPhase('LIVENESS_SMILE');
+      if (voiceGuidanceEnabled) {
+        soundbox.speakVoicePrompt('SMILE_LIVENESS', language);
+      }
 
       // 2. Liveness & Verification phase
       setTimeout(() => {
@@ -277,6 +340,9 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
           ? 'Kamera inaelekezwa ukutani, darini, au kwenye vitu vingine. Hakuna uso wa binadamu uliotambuliwa.' 
           : 'Camera is pointing at a wall, ceiling, or inanimate object. No human face detected.')
       );
+      if (voiceGuidanceEnabled) {
+        soundbox.speakVoicePrompt('NO_FACE', language);
+      }
       setStep('NO_FACE_DETECTED');
       return;
     }
@@ -296,6 +362,9 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
       if (!serverRes.success) {
         if (serverRes.stage === 'FACE_DETECTION') {
           setDetectionReason(serverRes.message || 'Uso haujaonekana kwenye kamera.');
+          if (voiceGuidanceEnabled) {
+            soundbox.speakVoicePrompt('NO_FACE', language);
+          }
           setStep('NO_FACE_DETECTED');
           return;
         }
@@ -322,10 +391,13 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
       setMatchScore(serverRes.confidenceScore || 99.4);
       setLivenessScore(serverRes.livenessScore || 98.1);
 
-      // Stage 7: WEKA PIN
+      // Stage 7: WEKA PIN with voice announcement
       setStep('ENTER_PIN_PASSWORD');
       setPinCode('');
       setPinError(null);
+      if (voiceGuidanceEnabled) {
+        soundbox.speakVoicePrompt('FACE_MATCHED', language);
+      }
     } catch (err: any) {
       stopCamera();
       setIsProcessing(false);
@@ -765,9 +837,23 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
           {/* STEP 2: LIVE 3D FACE MESH CAMERA SCANNING */}
           {/* ========================================================= */}
           {step === 'SCANNING_FACE' && (
-            <div className="space-y-4 text-center">
+            <div className={`space-y-4 text-center transition-all duration-300 p-2 rounded-3xl ${
+              nightTorchActive ? 'bg-white/95 p-4 shadow-[0_0_90px_rgba(255,255,255,0.9)]' : ''
+            }`}>
+              {/* Screen Flash Illumination Banner (Night Mode) */}
+              {nightTorchActive && (
+                <div className="py-1 px-3 bg-amber-400 text-slate-950 rounded-full text-xs font-black inline-flex items-center gap-1.5 shadow-md">
+                  <Sun className="w-4 h-4 fill-current animate-spin" />
+                  <span>{language === 'sw' ? 'Mwangaza wa Skrini Umewashwa (Screen Flash Torch)' : 'Screen Illumination Torch Active'}</span>
+                </div>
+              )}
+
               {/* Camera Frame with 3D Face Mesh Canvas Overlay */}
-              <div className="relative mx-auto w-72 h-88 sm:w-80 sm:h-96 rounded-3xl overflow-hidden bg-slate-950 border-2 border-slate-800 shadow-2xl flex items-center justify-center">
+              <div className={`relative mx-auto w-72 h-88 sm:w-80 sm:h-96 rounded-3xl overflow-hidden bg-slate-950 border-2 shadow-2xl flex items-center justify-center transition-all ${
+                nightTorchActive 
+                  ? 'border-white ring-8 ring-white/80 shadow-[0_0_60px_rgba(255,255,255,0.95)]' 
+                  : 'border-slate-800'
+              }`}>
                 
                 {/* Live Video or High-Res Simulated Face */}
                 {!isSimulatedCamera ? (
@@ -796,6 +882,11 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
                   </div>
                 )}
 
+                {/* Soft White Front-Facing Fill Glow during Torch Mode */}
+                {nightTorchActive && (
+                  <div className="absolute inset-0 pointer-events-none bg-white/20 mix-blend-screen z-10" />
+                )}
+
                 {/* 3D Facial Topological Mesh Canvas Overlay (Exact match to uploaded images) */}
                 <FaceMeshOverlay
                   status="SCANNING"
@@ -809,15 +900,46 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
                   isMirrored={true}
                 />
 
-                {/* HUD Top Status */}
+                {/* HUD Top Left Status */}
                 <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-emerald-500/40 text-[10px] font-mono text-emerald-400 flex items-center gap-1.5 z-30">
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>3D BIOMETRIC VISION</span>
                 </div>
+
+                {/* HUD Top Right Quick Controls: Torch & Voice Audio */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 z-30">
+                  {/* Torch / Flashlight Toggle */}
+                  <button
+                    type="button"
+                    onClick={toggleTorch}
+                    className={`p-1.5 rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-1 ${
+                      nightTorchActive 
+                        ? 'bg-amber-400 text-slate-950 border border-amber-300 ring-2 ring-amber-300/50' 
+                        : 'bg-slate-950/80 text-slate-200 border border-slate-700 hover:text-amber-300'
+                    }`}
+                    title={language === 'sw' ? 'Washa/Zima Mwanga wa Usiku (Flashlight)' : 'Toggle Night Screen Torch'}
+                  >
+                    {nightTorchActive ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {/* Voice Audio Mute / Unmute Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setVoiceGuidanceEnabled(!voiceGuidanceEnabled)}
+                    className={`p-1.5 rounded-lg text-xs font-bold transition-all shadow-md ${
+                      voiceGuidanceEnabled
+                        ? 'bg-emerald-500 text-slate-950 border border-emerald-400'
+                        : 'bg-slate-950/80 text-slate-400 border border-slate-700 hover:text-slate-200'
+                    }`}
+                    title={language === 'sw' ? 'Mwongozo wa Sauti (Voice Guidance)' : 'Voice Audio Prompts'}
+                  >
+                    {voiceGuidanceEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
 
               {/* Dynamic Guidance Prompts */}
-              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center">
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-center shadow-md">
                 {scanSubPhase === 'ALIGN' && (
                   <div className="flex items-center justify-center gap-2 text-emerald-300 text-sm font-semibold animate-pulse">
                     <Eye className="w-5 h-5 text-emerald-400" />
@@ -839,13 +961,44 @@ export const FacePaymentModal: React.FC<FacePaymentModalProps> = ({
                   </div>
                 )}
 
-                <p className="text-[11px] text-slate-400 mt-1.5">
-                  Malipo ya <span className="text-white font-mono font-bold">{formatTZS(Number(amount))}</span> kwenda {merchantName}
-                </p>
+                <div className="flex items-center justify-center gap-3 text-[11px] text-slate-400 mt-2 border-t border-slate-800/80 pt-1.5">
+                  <span>Malipo: <strong className="text-emerald-400 font-mono">{formatTZS(Number(amount))}</strong></span>
+                  <span>•</span>
+                  <span>{merchantName}</span>
+                </div>
+              </div>
+
+              {/* Quick Helper Bar: Torch & Voice indicators */}
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={toggleTorch}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+                    nightTorchActive
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md'
+                      : 'bg-slate-900 border-slate-700 text-amber-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <Flashlight className="w-3.5 h-3.5" />
+                  <span>{nightTorchActive ? (language === 'sw' ? 'Zima Mwangaza' : 'Turn Off Torch') : (language === 'sw' ? 'Washa Mwanga wa Usiku' : 'Night Screen Torch')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVoiceGuidanceEnabled(!voiceGuidanceEnabled)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all ${
+                    voiceGuidanceEnabled
+                      ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300'
+                      : 'bg-slate-900 border-slate-700 text-slate-400'
+                  }`}
+                >
+                  {voiceGuidanceEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> : <VolumeX className="w-3.5 h-3.5" />}
+                  <span>{voiceGuidanceEnabled ? (language === 'sw' ? 'Sauti Imewashwa' : 'Voice On') : (language === 'sw' ? 'Sauti Imezimwa' : 'Voice Off')}</span>
+                </button>
               </div>
 
               {/* Face Mode Toggle Buttons */}
-              <div className="flex justify-center gap-2">
+              <div className="flex justify-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => {

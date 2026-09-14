@@ -43,6 +43,7 @@ interface CustomerDashboardProps {
   onOpenAuth: () => void;
   onSelectTransaction: (tx: Transaction) => void;
   onToggleLanguage?: () => void;
+  onUpdateUser?: (updated: Partial<UserProfile>) => void;
 }
 
 export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
@@ -60,7 +61,8 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
   onOpenAccountSwitcher,
   onOpenAuth,
   onSelectTransaction,
-  onToggleLanguage
+  onToggleLanguage,
+  onUpdateUser
 }) => {
   const t = translations[language];
   const [showBalance, setShowBalance] = useState(true);
@@ -105,6 +107,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           onSelectTransaction={onSelectTransaction}
           onOpenSettings={onOpenAccountSwitcher}
           onToggleLanguage={onToggleLanguage}
+          onUpdateUser={onUpdateUser}
         />
       </div>
 
@@ -448,6 +451,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({
           setIsDesktopProfileOpen(false);
           onInitiatePayment();
         }}
+        onUpdateUser={onUpdateUser}
       />
     </>
   );

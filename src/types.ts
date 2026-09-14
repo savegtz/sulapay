@@ -29,9 +29,14 @@ export interface UserProfile {
   faceAvatarUrl?: string;
   securitySettings: {
     maxLimitWithoutPin: number; // in TZS
+    dailySpendingLimit?: number; // in TZS (default 500,000)
+    dailySpentAmount?: number; // spent today in TZS
+    isAccountFrozen?: boolean; // emergency instant freeze on biometric payments
     livenessSensitivity: 'STANDARD' | 'HIGH' | 'MAXIMUM';
     requireSmileCheck: boolean;
     requireBlinkCheck: boolean;
+    voicePromptsEnabled?: boolean;
+    autoNightTorch?: boolean;
   };
 }
 

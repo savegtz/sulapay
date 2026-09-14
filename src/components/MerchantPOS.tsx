@@ -18,7 +18,11 @@ import {
   Share2,
   ChevronDown,
   Radio,
-  WifiOff
+  WifiOff,
+  BarChart3,
+  Clock,
+  PieChart,
+  ArrowUpRight
 } from 'lucide-react';
 import { Language, Merchant, Transaction, UserProfile, Wallet } from '../types';
 import { translations } from '../utils/translations';
@@ -44,7 +48,7 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
 }) => {
   const t = translations[language];
   const [activeMerchant, setActiveMerchant] = useState<Merchant>(initialMerchant);
-  const [activeView, setActiveView] = useState<'POS' | 'SOUNDBOX' | 'QR' | 'LEDGER'>('POS');
+  const [activeView, setActiveView] = useState<'POS' | 'SOUNDBOX' | 'QR' | 'LEDGER' | 'ANALYTICS'>('POS');
 
   // POS State
   const [billAmount, setBillAmount] = useState<string>('15000');
@@ -307,6 +311,19 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
           >
             <TrendingUp className="w-4 h-4" />
             <span>{language === 'sw' ? 'Daftari la Mauzo' : 'Sales Ledger'}</span>
+          </button>
+
+          <button
+            id="tab-pos-analytics"
+            onClick={() => setActiveView('ANALYTICS')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+              activeView === 'ANALYTICS'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>{language === 'sw' ? 'Takwimu za Mauzo' : 'Analytics'}</span>
           </button>
         </div>
       </div>
@@ -735,6 +752,171 @@ export const MerchantPOS: React.FC<MerchantPOSProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 4: ADVANCED SALES & PEAK HOURS ANALYTICS */}
+      {activeView === 'ANALYTICS' && (
+        <div className="space-y-5">
+          {/* Top KPI Metrics Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+              <span className="text-[11px] text-slate-400 font-semibold block">
+                {language === 'sw' ? 'Mauzo ya Leo' : "Today's Revenue"}
+              </span>
+              <div className="text-xl font-black font-mono text-emerald-400">
+                {formatTZS(totalCollectedToday)}
+              </div>
+              <div className="text-[10px] text-emerald-500/90 flex items-center gap-1">
+                <ArrowUpRight className="w-3 h-3" />
+                <span>+18.4% {language === 'sw' ? 'vs jana' : 'vs yesterday'}</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+              <span className="text-[11px] text-slate-400 font-semibold block">
+                {language === 'sw' ? 'Malipo ya Uso (Face)' : 'FacePay Share'}
+              </span>
+              <div className="text-xl font-black font-mono text-cyan-400">
+                78.2%
+              </div>
+              <div className="text-[10px] text-slate-400">
+                {language === 'sw' ? 'Wateja wanaotumia Uso' : 'Biometric users'}
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+              <span className="text-[11px] text-slate-400 font-semibold block">
+                {language === 'sw' ? 'Idadi ya Miamala' : 'Transactions'}
+              </span>
+              <div className="text-xl font-black font-mono text-amber-300">
+                {merchantSales.length > 0 ? merchantSales.length : 14}
+              </div>
+              <div className="text-[10px] text-slate-400">
+                {language === 'sw' ? 'Wastani TZS 24,500' : 'Avg ticket size'}
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-1">
+              <span className="text-[11px] text-slate-400 font-semibold block">
+                {language === 'sw' ? 'Hali ya Uhamisho' : 'Settlement'}
+              </span>
+              <div className="text-sm font-bold text-emerald-400 flex items-center gap-1 pt-1">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>CRDB / TIPS</span>
+              </div>
+              <div className="text-[10px] text-slate-400">
+                {language === 'sw' ? 'Papo hapo (T+0)' : 'Real-time (T+0)'}
+              </div>
+            </div>
+          </div>
+
+          {/* Peak Hours (Saa Zenye Mzunguko Mkubwa wa Wateja) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-bold text-white">
+                  {language === 'sw' ? 'Muda Wenye Wateja Wengi (Peak Hours)' : 'Peak Customer Shopping Hours'}
+                </h3>
+              </div>
+              <span className="text-[11px] text-slate-400 font-mono">Leo, 24hrs</span>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-300 font-medium">12:00 - 15:00 (Mchana / Lunch Peak)</span>
+                  <span className="text-emerald-400 font-mono font-bold">46% ya Mauzo (TZS 185,000)</span>
+                </div>
+                <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" style={{ width: '46%' }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-300 font-medium">17:00 - 21:00 (Jioni / Evening Rush)</span>
+                  <span className="text-cyan-400 font-mono font-bold">34% ya Mauzo (TZS 136,000)</span>
+                </div>
+                <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-cyan-500 to-blue-400 rounded-full" style={{ width: '34%' }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-300 font-medium">08:00 - 11:00 (Asubuhi / Morning)</span>
+                  <span className="text-amber-400 font-mono font-bold">20% ya Mauzo (TZS 80,000)</span>
+                </div>
+                <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full" style={{ width: '20%' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Methods & Channels Distribution */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                  {language === 'sw' ? 'Mgawanyo wa Mbinu za Malipo' : 'Payment Rail Split'}
+                </h4>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                    <span className="text-slate-200 font-semibold">FacePay 3D Vision</span>
+                  </div>
+                  <span className="font-mono text-emerald-400 font-bold">78%</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+                    <span className="text-slate-200 font-semibold">TIPS Lipa Namba QR</span>
+                  </div>
+                  <span className="font-mono text-cyan-400 font-bold">16%</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                    <span className="text-slate-200 font-semibold">Namba ya Siri (Fallback PIN)</span>
+                  </div>
+                  <span className="font-mono text-slate-400 font-bold">6%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                  {language === 'sw' ? 'Taarifa za Uhakiki na Usalama' : 'Security & Anti-Spoofing'}
+                </h4>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Uthibitisho wa Uhai (Liveness)</span>
+                  <span className="text-emerald-400 font-mono font-bold">100% Salama</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Majaribio ya Picha (Spoofs Blocked)</span>
+                  <span className="text-emerald-400 font-mono font-bold">0 Hitilafu</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-300">Wastani wa Kasi ya Malipo</span>
+                  <span className="text-cyan-300 font-mono font-bold">Sekunde 1.2</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

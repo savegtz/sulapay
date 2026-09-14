@@ -168,18 +168,35 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
   /**
    * Share / Copy WhatsApp Receipt Text
    */
-  const handleShareWhatsApp = () => {
-    const text = `*FACEPAY TANZANIA RISITI YA MALIPO*\n\n` +
-      `✅ Hali: Imelipwa Kikamilifu\n` +
+  const getReceiptMessageText = () => {
+    return `*FACEPAY TANZANIA RISITI YA MALIPO*\n\n` +
+      `✅ Hali: Imelipwa Kikamilifu (Completed)\n` +
       `💰 Kiasi: TZS ${transaction.amount.toLocaleString()}\n` +
-      `🏪 Duka: ${transaction.merchantName}\n` +
+      `🏪 Duka / Mfanyabiashara: ${transaction.merchantName}\n` +
       `🏷️ Lipa Namba: ${transaction.merchantLipaNumber}\n` +
       `📄 Namba ya Risiti: ${transaction.referenceNumber}\n` +
       `📱 TIPS Ref: ${transaction.externalProviderRef}\n` +
       `👤 Mlipaji: ${transaction.userName}\n` +
       `🕒 Tarehe: ${formatDate(transaction.timestamp)}\n` +
-      `🛡️ Uhakiki: Sura ya Kibiometria (FacePay TIPS Switch)\n\n` +
-      `_Imetolewa na Mfumo wa FacePay Tanzania._`;
+      `🛡️ Njia ya Uthibitisho: FacePay 3D Biometrics (${transaction.biometricScore || 99.4}%)\n` +
+      `🏦 Mtandao: ${(transaction.paymentRail || 'M_PESA').replace('_', ' ')} (TIPS Switch)\n\n` +
+      `_Risiti halali iliyotolewa na FacePay Tanzania._\n` +
+      `https://facepay.co.tz`;
+  };
+
+  const handleDirectWhatsApp = () => {
+    const text = getReceiptMessageText();
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleSendSms = () => {
+    const text = getReceiptMessageText();
+    window.location.href = `sms:?body=${encodeURIComponent(text)}`;
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = getReceiptMessageText();
 
     if (navigator.share) {
       navigator.share({
@@ -324,8 +341,18 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             </div>
           )}
 
-          {/* Action Buttons: Download PDF, Print, Share, Done */}
-          <div className="pt-3 space-y-2">
+          {/* Action Buttons: WhatsApp Direct, SMS, PDF, Print, Done */}
+          <div className="pt-3 space-y-2.5">
+            {/* Primary WhatsApp Direct Share Button */}
+            <button
+              id="whatsapp-direct-receipt-btn"
+              onClick={handleDirectWhatsApp}
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-slate-950 font-black text-sm shadow-xl shadow-emerald-950/50 transition-all active:scale-[0.99]"
+            >
+              <Share2 className="w-4 h-4 stroke-[2.5]" />
+              <span>{language === 'sw' ? 'Tuma Risiti kwa WhatsApp' : 'Send Receipt to WhatsApp'}</span>
+            </button>
+
             <div className="grid grid-cols-2 gap-2">
               {/* Download PDF Button */}
               <button
@@ -338,35 +365,45 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 <span>{isGeneratingPdf ? 'Inatengeneza...' : (language === 'sw' ? 'Pakua PDF' : 'Download PDF')}</span>
               </button>
 
+              {/* SMS Share Button */}
+              <button
+                id="sms-share-receipt-btn"
+                onClick={handleSendSms}
+                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs border border-slate-700 transition-colors"
+              >
+                <Smartphone className="w-4 h-4 text-emerald-400" />
+                <span>{language === 'sw' ? 'Tuma kwa SMS' : 'Send via SMS'}</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
               {/* Print Receipt Button */}
               <button
                 id="print-receipt-btn"
                 onClick={handlePrint}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs border border-slate-700 transition-colors"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium text-xs border border-slate-700/80 transition-colors"
               >
-                <Printer className="w-4 h-4 text-emerald-400" />
-                <span>{language === 'sw' ? 'Chapa Risiti' : 'Print Receipt'}</span>
+                <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{language === 'sw' ? 'Chapa' : 'Print'}</span>
               </button>
-            </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              {/* WhatsApp Share Button */}
+              {/* Copy Receipt Text Button */}
               <button
-                id="share-receipt-btn"
+                id="copy-receipt-btn"
                 onClick={handleShareWhatsApp}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium text-xs border border-slate-700/80 transition-colors"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium text-xs border border-slate-700/80 transition-colors"
               >
-                <Share2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{copied ? 'Imenakiliwa!' : (language === 'sw' ? 'Shiriki / WhatsApp' : 'Share Receipt')}</span>
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                <span>{copied ? 'Imenakiliwa' : (language === 'sw' ? 'Nakili' : 'Copy')}</span>
               </button>
 
               {/* Done Button */}
               <button
                 id="done-receipt-btn"
                 onClick={onClose}
-                className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-colors"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-colors"
               >
-                <span>{language === 'sw' ? 'Nimemaliza' : 'Done'}</span>
+                <span>{language === 'sw' ? 'Funga' : 'Close'}</span>
               </button>
             </div>
           </div>

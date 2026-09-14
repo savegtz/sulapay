@@ -143,6 +143,75 @@ class SoundboxEngine {
       }
     }
   }
+
+  // Voice Guidance during Biometric Face Scanning & Authentication
+  public speakVoicePrompt(
+    promptKey: 'LOOK_AT_CAMERA' | 'SMILE_LIVENESS' | 'FACE_MATCHED' | 'NO_FACE' | 'LOW_LIGHT' | 'ACCOUNT_FROZEN' | 'LIMIT_EXCEEDED',
+    lang: 'sw' | 'en' = 'sw'
+  ) {
+    if (!('speechSynthesis' in window)) return;
+
+    try {
+      window.speechSynthesis.cancel(); // Stop prior sentence immediately
+
+      const prompts: Record<string, { sw: string; en: string }> = {
+        LOOK_AT_CAMERA: {
+          sw: 'Tafadhali angalia mbele ya kamera ya FacePay.',
+          en: 'Please look directly at the FacePay camera.'
+        },
+        SMILE_LIVENESS: {
+          sw: 'Tafadhali tabasamu kidogo kuthibitisha uhai.',
+          en: 'Please smile gently for liveness check.'
+        },
+        FACE_MATCHED: {
+          sw: 'Uso wako umethibitishwa. Tafadhali weka PIN yako ya tarakimu nne.',
+          en: 'Face verified. Please enter your 4-digit PIN.'
+        },
+        NO_FACE: {
+          sw: 'Hakuna uso wa binadamu uliotambuliwa. Tafadhali elekeza kamera usoni mwako.',
+          en: 'No human face detected. Please point the camera at your face.'
+        },
+        LOW_LIGHT: {
+          sw: 'Mwanga ni hafifu. Mwangaza wa skrini umewashwa kukusaidia.',
+          en: 'Low light detected. Screen illumination active.'
+        },
+        ACCOUNT_FROZEN: {
+          sw: 'Akaunti hii imefungwa kwa dharura. Malipo ya uso yamezuiwa kwa usalama.',
+          en: 'This account is frozen. Biometric payments are locked for security.'
+        },
+        LIMIT_EXCEEDED: {
+          sw: 'Kiasi kimezidi kikomo chako cha matumizi cha siku.',
+          en: 'Amount exceeds your daily spending limit.'
+        }
+      };
+
+      const text = prompts[promptKey] ? prompts[promptKey][lang] : '';
+      if (!text) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.volume = this.volume;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.05;
+
+      const voices = window.speechSynthesis.getVoices();
+      if (lang === 'sw') {
+        const swVoice = voices.find(v => v.lang.startsWith('sw') || v.name.toLowerCase().includes('swahili'));
+        if (swVoice) {
+          utterance.voice = swVoice;
+        } else {
+          const fallbackVoice = voices.find(v => v.lang.includes('en-ZA') || v.lang.includes('en-KE') || v.lang.includes('en-GB') || v.lang.includes('en-US'));
+          if (fallbackVoice) utterance.voice = fallbackVoice;
+        }
+      } else {
+        const enVoice = voices.find(v => v.lang.includes('en'));
+        if (enVoice) utterance.voice = enVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('Voice prompt error:', err);
+    }
+  }
 }
 
 export const soundbox = new SoundboxEngine();

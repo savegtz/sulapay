@@ -13,7 +13,12 @@ import {
   Share2, 
   Copy,
   Sparkles,
-  ScanFace
+  ScanFace,
+  ShieldAlert,
+  Volume2,
+  Sun,
+  Sliders,
+  AlertTriangle
 } from 'lucide-react';
 import { Language, ThemeMode, UserProfile } from '../types';
 import { AntiSpoofingLabModal } from './AntiSpoofingLabModal';
@@ -26,6 +31,7 @@ interface ProfileScreenProps {
   onToggleLanguage: () => void;
   theme?: ThemeMode;
   onOpenBiometrics?: () => void;
+  onUpdateUser?: (updated: Partial<UserProfile>) => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -35,12 +41,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   language,
   onToggleLanguage,
   theme = 'light',
-  onOpenBiometrics
+  onOpenBiometrics,
+  onUpdateUser
 }) => {
-  const [activeSubModal, setActiveSubModal] = useState<'PERSONAL' | 'PIN' | 'BIOMETRICS' | 'REFERRAL' | null>(null);
+  const [activeSubModal, setActiveSubModal] = useState<'PERSONAL' | 'PIN' | 'BIOMETRICS' | 'REFERRAL' | 'SECURITY_LIMITS' | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [facePayEnabled, setFacePayEnabled] = useState(true);
   const [fingerprintEnabled, setFingerprintEnabled] = useState(true);
+  
+  // Security controls state
+  const [dailyLimit, setDailyLimit] = useState<number>(user.securitySettings?.dailySpendingLimit || 500000);
+  const [isFrozen, setIsFrozen] = useState<boolean>(user.securitySettings?.isAccountFrozen || false);
+  const [voicePrompts, setVoicePrompts] = useState<boolean>(user.securitySettings?.voicePromptsEnabled !== false);
+  const [nightTorch, setNightTorch] = useState<boolean>(user.securitySettings?.autoNightTorch !== false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -255,6 +269,35 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <ChevronRight className="w-4 h-4 text-slate-400" />
             </button>
 
+            {/* 3.6 Spending Limit & Account Security Controls */}
+            <button
+              id="open-security-limits-btn"
+              onClick={() => setActiveSubModal('SECURITY_LIMITS')}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                  <Sliders className="w-4 h-4 stroke-[2.5]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      {language === 'sw' ? 'Mipaka na Usalama wa Malipo' : 'Security & Spending Limits'}
+                    </span>
+                    {isFrozen && (
+                      <span className="px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-rose-500 text-white">
+                        {language === 'sw' ? 'IMEZUIWA' : 'FROZEN'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    {language === 'sw' ? `Kikomo: TZS ${(dailyLimit).toLocaleString()} • Kuzuia Wizi • Sauti` : `Daily limit: TZS ${(dailyLimit).toLocaleString()} • Freeze • Voice`}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            </button>
+
             {/* 4. Change Language */}
             <button
               onClick={onToggleLanguage}
@@ -378,6 +421,178 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               >
                 Save Settings
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* SECURITY & SPENDING LIMITS MODAL */}
+        {activeSubModal === 'SECURITY_LIMITS' && (
+          <div className="fixed inset-0 z-60 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-5 space-y-4 shadow-2xl border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div className="flex items-center gap-2 text-amber-500">
+                  <Sliders className="w-5 h-5" />
+                  <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                    {language === 'sw' ? 'Usalama na Mipaka ya Malipo' : 'Security & Spending Controls'}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveSubModal(null)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-200"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {saveSuccessMsg && (
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  <span>{saveSuccessMsg}</span>
+                </div>
+              )}
+
+              <div className="space-y-4 text-xs">
+                {/* 1. Daily Spending Limit */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {language === 'sw' ? 'Kiwango cha Juu kwa Siku' : 'Daily Spending Limit'}
+                    </span>
+                    <span className="font-mono font-bold text-emerald-500">
+                      TZS {Number(dailyLimit).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[100000, 250000, 500000, 1000000, 2000000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setDailyLimit(amt)}
+                        className={`py-1.5 px-2 rounded-xl text-[11px] font-mono font-semibold border transition-all ${
+                          dailyLimit === amt
+                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-bold shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        {(amt / 1000).toLocaleString()}k
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Freeze Account Toggle */}
+                <div className={`p-3 rounded-2xl border transition-all ${
+                  isFrozen 
+                    ? 'bg-rose-500/10 border-rose-500/40 text-rose-300' 
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className={`w-4 h-4 ${isFrozen ? 'text-rose-400' : 'text-slate-400'}`} />
+                      <div>
+                        <span className="font-bold text-slate-900 dark:text-white block">
+                          {language === 'sw' ? 'Zuia Akaunti kwa Muda (Freeze)' : 'Instant Freeze Account'}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {language === 'sw' ? 'Sitisha miamala yote ya uso mara moja' : 'Block all face transactions immediately'}
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isFrozen}
+                      onChange={(e) => setIsFrozen(e.target.checked)}
+                      className="w-4 h-4 accent-rose-500 rounded"
+                    />
+                  </div>
+                  {isFrozen && (
+                    <p className="mt-2 text-[10px] text-rose-400 bg-rose-950/40 p-1.5 rounded-lg border border-rose-900/50">
+                      ⚠️ {language === 'sw' ? 'Akaunti imezuiwa! Hakuna malipo yatakayoruhusiwa hadi uwashe tena.' : 'Account frozen! All biometric transactions will be blocked until unfrozen.'}
+                    </p>
+                  )}
+                </div>
+
+                {/* 3. Voice Audio Guidance Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="w-4 h-4 text-emerald-400" />
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-white block">
+                        {language === 'sw' ? 'Mwongozo wa Sauti (Voice Prompts)' : 'Voice Guidance'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {language === 'sw' ? 'Maelekezo ya sauti ya Kiswahili/Kiingereza' : 'Audio cues for alignment and liveness'}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={voicePrompts}
+                    onChange={(e) => setVoicePrompts(e.target.checked)}
+                    className="w-4 h-4 accent-emerald-500 rounded"
+                  />
+                </div>
+
+                {/* 4. Auto Night Screen Torch */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Sun className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <span className="font-bold text-slate-900 dark:text-white block">
+                        {language === 'sw' ? 'Mwangaza wa Skrini Usiku' : 'Night Screen Torch'}
+                      </span>
+                      <span className="text-[10px] text-slate-400">
+                        {language === 'sw' ? 'Huwasha mwanga angavu skrini ikiwa gizani' : 'Screen flash halo for dark environments'}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={nightTorch}
+                    onChange={(e) => setNightTorch(e.target.checked)}
+                    className="w-4 h-4 accent-amber-500 rounded"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubModal(null)}
+                  className="w-1/3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold text-xs"
+                >
+                  {language === 'sw' ? 'Ghairi' : 'Cancel'}
+                </button>
+
+                <button
+                  type="button"
+                  id="save-security-settings-btn"
+                  onClick={() => {
+                    if (onUpdateUser) {
+                      onUpdateUser({
+                        securitySettings: {
+                          ...(user.securitySettings || {}),
+                          dailySpendingLimit: Number(dailyLimit),
+                          dailySpentAmount: user.securitySettings?.dailySpentAmount || 0,
+                          isAccountFrozen: isFrozen,
+                          voicePromptsEnabled: voicePrompts,
+                          autoNightTorch: nightTorch
+                        }
+                      });
+                    }
+                    setSaveSuccessMsg(language === 'sw' ? 'Mipangilio imehifadhiwa!' : 'Settings saved!');
+                    setTimeout(() => {
+                      setSaveSuccessMsg(null);
+                      setActiveSubModal(null);
+                    }, 1000);
+                  }}
+                  className="w-2/3 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20"
+                >
+                  {language === 'sw' ? 'Hifadhi Mabadiliko' : 'Save Changes'}
+                </button>
+              </div>
             </div>
           </div>
         )}
